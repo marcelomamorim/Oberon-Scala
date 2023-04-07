@@ -2,10 +2,11 @@ name: CI
 on:
   pull_request:
     - master
-    - test/add-more-tests
   push:
     - master
-    - test/add-more-tests
+    - 'feat/**'
+    - 'feature/**'
+    - 'test/**'
 jobs:
   test:
     runs-on: ubuntu-latest
