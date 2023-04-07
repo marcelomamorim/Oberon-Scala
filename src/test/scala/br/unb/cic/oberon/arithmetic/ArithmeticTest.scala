@@ -3,8 +3,6 @@ package br.unb.cic.oberon.arithmetic
 import br.unb.cic.oberon.ir.ast.{IntValue, RealValue, MultExpression}
 import org.scalatest.funsuite.AnyFunSuite
 import br.unb.cic.oberon.interpreter.{Interpreter, EvalExpressionVisitor}
-import br.unb.cic.oberon._
-import br.unb.cic.oberon.ir.ast._
 
 class ArithmeticTestSuite extends AnyFunSuite {
   test("Test sum between two integers") {
@@ -53,4 +51,16 @@ class ArithmeticTestSuite extends AnyFunSuite {
     assert(expected == res)
 
   }
+
+  test("Test a division by zero") {
+
+    val i0 = IntValue(0)
+    val i06 = IntValue(6)
+
+    assertThrows[ArithmeticException] {
+      i06./(i0)
+    }
+
+  }
+
 }

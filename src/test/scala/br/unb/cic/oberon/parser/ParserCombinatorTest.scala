@@ -992,4 +992,6 @@ test("Testing the oberon stmt26 code. This module has a ForRange stmt") {
 
   }
 
+  //TODO: adicionar testes com as exceptions esperadas em alguns cenários
+
 }
