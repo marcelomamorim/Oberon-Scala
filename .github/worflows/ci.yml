@@ -5,7 +5,7 @@ on:
     branches:
       - master
       - 'feature/**'
-      - 'test/**'
+      - 'test/add-more-tests'
   pull_request:
     branches:
       - master

@@ -7,7 +7,7 @@ name: Scala CI
 
 on:
   push:
-    branches: [ "master", "test/**" ]
+    branches: [ "master", "test/add-more-tests" ]
   pull_request:
     branches: [ "master", "test/**" ]
 
