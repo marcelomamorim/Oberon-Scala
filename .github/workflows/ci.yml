@@ -1,31 +1,17 @@
-# This workflow uses actions that are not certified by GitHub.
-# They are provided by a third-party and are governed by
-# separate terms of service, privacy policy, and support
-# documentation.
-
-name: Scala CI
-
+name: CI
 on:
-  push:
-    branches: [ "master", "feature/**", "test/**", "feat/**" ]
   pull_request:
-    branches: [ "master", "feature/**", "test/**", "feat/**" ]
-
-permissions:
-  contents: read
-
+  push:
 jobs:
-  build:
-
+  test:
     runs-on: ubuntu-latest
-
     steps:
-      - uses: actions/checkout@v3
-      - name: Set up JDK 11
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Setup JDK
         uses: actions/setup-java@v3
         with:
-          java-version: '11'
-          distribution: 'temurin'
-          cache: 'sbt'
-      - name: Run tests
-        run: sbt test
+          distribution: temurin
+          java-version: 11
+      - name: Build and Test
+        run: sbt -v +test
