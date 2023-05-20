@@ -16,7 +16,11 @@ class TACodeTest extends AnyFunSuite {
       Option(IntegerType),
       List[br.unb.cic.oberon.ir.ast.Constant](),
       List[br.unb.cic.oberon.ir.ast.VariableDeclaration](),
-      ReturnStmt(AddExpression(VarExpression("a"), VarExpression("b")))
+      SequenceStmt(
+        List(
+          ReturnStmt(AddExpression(VarExpression("a"), VarExpression("b")),
+        )
+      ))
     )
 
     val procedureCall = ProcedureCallStmt(procedure.name, List(AddExpression(VarExpression("a"), VarExpression("b"))))
