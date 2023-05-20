@@ -24,7 +24,6 @@ import scala.language.{existentials, postfixOps}
  */
 class Interpreter extends OberonVisitorAdapter {
 
-
   type T = Unit
 
   var exit = false

@@ -5,7 +5,7 @@ import br.unb.cic.oberon.ir.tac._
 import br.unb.cic.oberon.tc.{ExpressionTypeVisitor, TypeChecker}
 
 object TACodeGenerator extends CodeGenerator[List[TAC]] {
-  
+
   private var tc = new TypeChecker()
   private var expVisitor = new ExpressionTypeVisitor(tc)
 
@@ -13,13 +13,60 @@ object TACodeGenerator extends CodeGenerator[List[TAC]] {
     load_vars(module.variables, module.constants)
     module.stmt match {
       case Some(stm) => generateStatement(stm, List())
-
       case None => List()
     }
   }
 
-// A geração de código de procedure foi mais difícil do que imaginamos, tivemos algumas dúvidas que não conseguimos resolver pesquisando.
-//  def generateProcedure(proc: Procedure, insts: List[TAC]): (Address, List[TAC]) = {}
+  // [Comentário do grupo anterior]
+  // A geração de código de procedure foi mais difícil do que imaginamos, tivemos algumas dúvidas que não conseguimos resolver pesquisando.
+  // A procedure possui seis "parâmetros" que precisamos converter para TAC
+
+  // 1) name: String, OK
+  // 2) args: List[FormalArg], OK
+  // 3) returnType: Option[Type], OK
+  // 4) constants: List[Constant], OK
+  // 5) variables: List[VariableDeclaration], OK
+  // 6) stmt: Statement OK
+  def generateProcedure(proc: Procedure, insts: List[TAC]): (List[Address], List[TAC]) = {
+
+    // Antes de carregar as variáveis,
+    // precisamos declarar os argumentos como variáveis
+    // Carregar variáveis
+    val procedureVariables = proc.args.map { procedureArgumentAST =>
+      VariableDeclaration(procedureArgumentAST.name, procedureArgumentAST.argumentType)
+    }.concat(proc.variables)
+
+    val finalListOfVariables = procedureVariables
+
+    load_vars(finalListOfVariables)
+
+    // Converter de Constants em AST para TAC
+    // val constants = generateTacConstants()
+    // Problema na separação entre Constants em AST e TAC
+    val procedureConstants = proc.constants.map { astConstant =>
+      Constant(astConstant.name, astConstant.accept(expVisitor).get)
+    }
+
+    // Converter statements => método já pronto (apenas ajustar)
+    val tacStatements = generateStatement(proc.stmt, insts)
+
+    //Nome da procedure
+    //Geramos um novo Address
+    val name = Name(proc.name, StringType)
+
+    //Argumentos da Procedure
+    // Cada argumento tem um Type e Name
+    // Trabalho aqui será converter o tipo
+
+    //Na conversão de tipos temos uma questão de arquitetura
+    // Os tipos da abstração AST estão sendo utilizados na conversão para TAC
+    // Isso merece atenção
+    val finalListOfTacCode = tacStatements
+    val finalListOfAddress = List(name).concat(procedureConstants)
+
+    (finalListOfAddress, finalListOfTacCode)
+
+  }
 
   def generateStatement(stmt: Statement, insts: List[TAC]): List[TAC] = {
     stmt match {
@@ -28,7 +75,7 @@ object TACodeGenerator extends CodeGenerator[List[TAC]] {
         designator match {
           case VarAssignment(varName) =>
             val v = Name(varName, exp.accept(expVisitor).get)
-            return insts1 :+ CopyOp(t, v, "") 
+            return insts1 :+ CopyOp(t, v, "")
 
           case ArrayAssignment(array, index) =>
             val (a, insts2) = generateExpression(array, insts1)
@@ -39,8 +86,8 @@ object TACodeGenerator extends CodeGenerator[List[TAC]] {
             val p = Name(pointerName, LocationType)
             return insts1 :+ SetPointer(t, p, "")
 
-          case RecordAssignment(_,_) =>
-            throw new Exception("Records não foram implementados!") 
+          case RecordAssignment(_, _) =>
+            throw new Exception("Records não foram implementados!")
         }
 
       case SequenceStmt(stmts) =>
@@ -48,15 +95,9 @@ object TACodeGenerator extends CodeGenerator[List[TAC]] {
           (acc, stm) => generateStatement(stm, acc)
         }
 
-// No final não conseguimos implementar a geração de procedures
-//      case ProcedureCallStmt(name, argsExps) =>
-//        val (args, argInsts) = argsExps.foldLeft((List[Address](),insts)) {
-//          (acc, expr) => 
-//            val (address, ops) = TACodeGenerator.generateExpression(expr, acc._2)
-//            (acc._1 :+ address, ops)
-//        }
-//        val params = args.map(x => Param(x, ""))
-//        return argInsts ++ params :+ Call(name, args.length, "")
+      // No final não conseguimos implementar a geração de procedures
+      //case ProcedureCallStmt(name, argsExps) =>
+
 
       case IfElseStmt(condition, thenStmt, elseStmt) =>
         val l1 = LabelGenerator.generateLabel
@@ -71,7 +112,7 @@ object TACodeGenerator extends CodeGenerator[List[TAC]] {
             val (l, insts1) = generateExpression(left, insts)
             val (r, insts2) = generateExpression(right, insts1)
             generateIfStatement(l1, l2, EqJump(l, r, l1, ""), thenStmt, elseStmt, insts2)
-            
+
           case GTExpression(left, right) =>
             val (l, insts1) = generateExpression(left, insts)
             val (r, insts2) = generateExpression(right, insts1)
@@ -101,7 +142,7 @@ object TACodeGenerator extends CodeGenerator[List[TAC]] {
             generateIfStatement(l1, l2, JumpFalse(t, l1, ""), thenStmt, elseStmt, insts1)
         }
 
-      case WhileStmt(condition, stmt) => 
+      case WhileStmt(condition, stmt) =>
         val l1 = LabelGenerator.generateLabel
         val l2 = LabelGenerator.generateLabel
         val insts1 = insts :+ Jump(l1, "") :+ NOp(l2)
@@ -112,7 +153,7 @@ object TACodeGenerator extends CodeGenerator[List[TAC]] {
             val (l, insts3) = generateExpression(left, insts2)
             val (r, insts4) = generateExpression(right, insts3)
             return insts4 :+ EqJump(l, r, l2, "")
-          
+
           case NEQExpression(left, right) =>
             val (l, insts3) = generateExpression(left, insts2)
             val (r, insts4) = generateExpression(right, insts3)
@@ -146,25 +187,25 @@ object TACodeGenerator extends CodeGenerator[List[TAC]] {
             val (t, insts3) = generateExpression(condition, insts2)
             return insts3 :+ JumpTrue(t, l2, "")
         }
-      
+
       case ReadLongRealStmt(varName) =>
         return insts :+ ReadLongReal(Name(varName, RealType), "")
-      
+
       case ReadRealStmt(varName) =>
         return insts :+ ReadReal(Name(varName, RealType), "")
-      
+
       case ReadLongIntStmt(varName) =>
         return insts :+ ReadLongInt(Name(varName, IntegerType), "")
 
       case ReadIntStmt(varName) =>
         return insts :+ ReadInt(Name(varName, IntegerType), "")
-      
+
       case ReadShortIntStmt(varName) =>
         return insts :+ ReadShortInt(Name(varName, IntegerType), "")
-      
+
       case ReadCharStmt(varName) =>
         return insts :+ ReadChar(Name(varName, StringType), "")
-      
+
       case WriteStmt(expression) =>
         val (t, insts1) = generateExpression(expression, insts)
         return insts1 :+ Write(t, "")
@@ -176,10 +217,10 @@ object TACodeGenerator extends CodeGenerator[List[TAC]] {
       case ExitStmt() =>
         return insts :+ Exit("")
 
-      case ForEachStmt(_,_,_) =>
+      case ForEachStmt(_, _, _) =>
         throw new Exception("ForEachStmt não foi implementado")
 
-      case ElseIfStmt(_,_) =>
+      case ElseIfStmt(_, _) =>
         throw new Exception("ElseIfStmt não foi implementado")
 
       case NewStmt(_) =>
@@ -233,7 +274,7 @@ object TACodeGenerator extends CodeGenerator[List[TAC]] {
         val (t, l, r, insts2) = generateBinaryExpression(left, right, insts, expr.accept(expVisitor).get)
 
         return (t, insts2 :+ DivOp(l, r, t, ""))
-        
+
       case AndExpression(left, right) =>
         val (t, l, r, insts2) = generateBinaryExpression(left, right, insts, BooleanType)
         return (t, insts2 :+ AndOp(l, r, t, ""))
@@ -281,15 +322,15 @@ object TACodeGenerator extends CodeGenerator[List[TAC]] {
         val (t0, t1) = (temps(0), temps(1))
         return (t1, insts2 :+ SLTOp(r, l, t0, "") :+ NotOp(t0, t1, ""))
 
-// No final não conseguimos implementar a geração de procedures.
-//      case FunctionCallExpression(name, args) =>
-//        val (args, argInsts) = argsExps.foldLeft((List[Address](),insts)) {
-//          (acc, expr) => 
-//            val (address, ops) = TACodeGenerator.generateExpression(expr, acc._2)
-//            (acc._1 :+ address, ops)
-//        }
-//        val params = args.map(x => Param(x, ""))
-//        return (funcs.get(name), argInsts ++ params :+ Call(name, args.length), "")
+      // No final não conseguimos implementar a geração de procedures.
+      //      case FunctionCallExpression(name, args) =>
+      //        val (args, argInsts) = argsExps.foldLeft((List[Address](),insts)) {
+      //          (acc, expr) =>
+      //            val (address, ops) = TACodeGenerator.generateExpression(expr, acc._2)
+      //            (acc._1 :+ address, ops)
+      //        }
+      //        val params = args.map(x => Param(x, ""))
+      //        return (funcs.get(name), argInsts ++ params :+ Call(name, args.length), "")
 
       case ArraySubscript(array, index) =>
         val (a, insts1) = generateExpression(array, insts)
@@ -318,9 +359,9 @@ object TACodeGenerator extends CodeGenerator[List[TAC]] {
     val (l, insts1) = generateExpression(left, insts)
     val (r, insts2) = generateExpression(right, insts1)
     val temps = expr match {
-      case GTExpression(_,_) | LTExpression(_,_) => List(new Temporary(BooleanType))
+      case GTExpression(_, _) | LTExpression(_, _) => List(new Temporary(BooleanType))
       case other => List(new Temporary(BooleanType), new Temporary(BooleanType))
-      }
+    }
     (temps, l, r, insts2)
   }
 
@@ -332,7 +373,7 @@ object TACodeGenerator extends CodeGenerator[List[TAC]] {
 
       case None => insts1
     }
-  } 
+  }
 
 
   def load_vars(vars: List[VariableDeclaration], consts: List[ASTConstant] = List()): Unit = {

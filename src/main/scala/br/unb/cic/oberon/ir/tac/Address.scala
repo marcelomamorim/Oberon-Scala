@@ -1,5 +1,7 @@
 package br.unb.cic.oberon.ir.tac
 
+//Está sendo utilizado uma abstração da AST para o TAC
+//Seria um ponto de refatoração?
 import br.unb.cic.oberon.ir.ast.{Type}
 
 class Address(t: Type){}
