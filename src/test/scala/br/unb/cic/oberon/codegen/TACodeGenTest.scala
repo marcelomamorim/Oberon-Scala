@@ -23,10 +23,7 @@ class TACodeTest extends AnyFunSuite {
       ))
     )
 
-    val procedureCall = ProcedureCallStmt(procedure.name, List(AddExpression(VarExpression("a"), VarExpression("b"))))
-
     val tacCodeList = TACodeGenerator.generateProcedure(procedure, List())
-    val procedureCallTac = TACodeGenerator.generateStatement(procedureCall, List())
 
   }
 
