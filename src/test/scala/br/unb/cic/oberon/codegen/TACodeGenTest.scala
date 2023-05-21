@@ -1,31 +1,12 @@
 package br.unb.cic.oberon.codegen
 
+import br.unb.cic.oberon.interpreter.Interpreter
 import br.unb.cic.oberon.ir.ast.{Constant => ASTConstant, _}
 import br.unb.cic.oberon.ir.tac._
+import br.unb.cic.oberon.parser.ScalaParser
 import org.scalatest.funsuite.AnyFunSuite
 
 class TACodeTest extends AnyFunSuite {
-
-  test("Generate procedure") {
-
-    TACodeGenerator.reset()
-
-    val procedure = Procedure(
-      "addFunc",
-      List(ParameterByValue("a", IntegerType), ParameterByValue("b", IntegerType)),
-      Option(IntegerType),
-      List[br.unb.cic.oberon.ir.ast.Constant](),
-      List[br.unb.cic.oberon.ir.ast.VariableDeclaration](),
-      SequenceStmt(
-        List(
-          ReturnStmt(AddExpression(VarExpression("a"), VarExpression("b")),
-        )
-      ))
-    )
-
-    val tacCodeList = TACodeGenerator.generateProcedure(procedure, List())
-
-  }
 
   test("Generate add between constants") {
 
@@ -485,4 +466,40 @@ class TACodeTest extends AnyFunSuite {
     // while(var < 5){var = var + 1}
     assert(list == ops)
   }
+
+  test("Generate isolated procedure declaration") {
+
+    TACodeGenerator.reset()
+
+    val procedure = Procedure(
+      "addFunc",
+      List(ParameterByValue("a", IntegerType), ParameterByValue("b", IntegerType)),
+      Option(IntegerType),
+      List[br.unb.cic.oberon.ir.ast.Constant](),
+      List[br.unb.cic.oberon.ir.ast.VariableDeclaration](),
+      SequenceStmt(List(ReturnStmt(AddExpression(VarExpression("a"), VarExpression("b")))
+      ))
+    )
+
+    val tacCodeList = TACodeGenerator.generateProcedure(procedure, List())
+
+  }
+
+  test("generate TAC from procedure06.oberon program") {
+
+    val interpreter = new Interpreter()
+    interpreter.setTestEnvironment()
+
+    val module = ScalaParser.parseResource("procedures/procedure06.oberon")
+    module.accept(interpreter)
+
+    val tacCodeFirstProcedure = TACodeGenerator
+      .generateProcedure(module.procedures(0), List())
+
+    val tacCodeSecondProcedure = TACodeGenerator
+      .generateProcedure(module.procedures(1), List())
+
+  }
+
+
 }

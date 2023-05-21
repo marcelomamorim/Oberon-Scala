@@ -3,8 +3,6 @@ package br.unb.cic.oberon.ir.tac
 
 class TAC(label: String){}
 
-
-
 class BinOp(s1: Address, s2: Address, dest: Address, label: String) extends TAC(label) {}
 
 case class AddOp(s1: Address, s2: Address, dest: Address, label: String) extends BinOp(s1, s2, dest, label) {}

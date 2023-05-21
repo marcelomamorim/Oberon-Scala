@@ -95,9 +95,13 @@ object TACodeGenerator extends CodeGenerator[List[TAC]] {
           (acc, stm) => generateStatement(stm, acc)
         }
 
-      // No final não conseguimos implementar a geração de procedures
-      //case ProcedureCallStmt(name, argsExps) =>
-
+      // Em implementação
+      case ProcedureCallStmt(name, argsExps) =>
+        // 1) Antes do "Jump", precisaremos definir os valores
+        // dos registros a0, a1 até a7 caso existam sete argumentos
+        // 2) Após o "Jump", precisamos pegar o valor do return e
+        // jogar para um registro do tipo s (s1, s2 etc)
+        return insts :+ Jump(name, "")
 
       case IfElseStmt(condition, thenStmt, elseStmt) =>
         val l1 = LabelGenerator.generateLabel
