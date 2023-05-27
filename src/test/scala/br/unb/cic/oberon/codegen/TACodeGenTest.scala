@@ -481,7 +481,7 @@ class TACodeTest extends AnyFunSuite {
       ))
     )
 
-    val tacCodeList = TACodeGenerator.generateProcedure(procedure, List())
+    val tacCodeList = TACodeGenerator.generateProcedureDefinition(procedure, List())
 
   }
 
@@ -494,12 +494,11 @@ class TACodeTest extends AnyFunSuite {
     module.accept(interpreter)
 
     val tacCodeFirstProcedure = TACodeGenerator
-      .generateProcedure(module.procedures(0), List())
+      .generateProcedureDefinition(module.procedures(0), List())
 
     val tacCodeSecondProcedure = TACodeGenerator
-      .generateProcedure(module.procedures(1), List())
+      .generateProcedureDefinition(module.procedures(1), List())
 
   }
-
 
 }
