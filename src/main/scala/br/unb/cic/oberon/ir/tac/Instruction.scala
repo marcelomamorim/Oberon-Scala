@@ -62,9 +62,11 @@ case class NeqJump(s1: Address, s2: Address, destLabel: String, label: String) e
 
 
 
-case class Param(s1: Address, label: String) extends Instruction(label) {}
+case class PushParam(s1: Address, label: String) extends Instruction(label) {}
 
-case class Call(procLabel: String, n: Int, label: String) extends Instruction(label) {}
+case class PopParam(n : Int, label : String) extends Instruction(label) {}
+
+case class Call(procLabel: String) extends Instruction(procLabel) {}
 
 case class Return(s1: Address, label: String) extends Instruction(label) {}
 

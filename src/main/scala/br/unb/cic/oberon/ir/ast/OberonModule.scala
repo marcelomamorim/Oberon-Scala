@@ -269,6 +269,8 @@ case object UndefinedType extends Type
 case object NullType extends Type
 case object LocationType extends Type
 
+// Label
+// Lista de declaracao de variáveis -> Address
 case class RecordType(variables: List[VariableDeclaration]) extends Type
 case class ArrayType(length: Int, baseType: Type) extends Type
 case class PointerType(variableType: Type) extends Type

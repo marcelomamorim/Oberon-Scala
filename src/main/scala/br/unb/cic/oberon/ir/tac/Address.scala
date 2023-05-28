@@ -1,5 +1,5 @@
 package br.unb.cic.oberon.ir.tac
-import br.unb.cic.oberon.ir.ast.{Type}
+import br.unb.cic.oberon.ir.ast.Type
 
 class Address(t: Type){}
 
@@ -10,7 +10,7 @@ case class Constant(value: String, t: Type) extends Address(t){}
 class Temporary(t: Type, num: Int = 0, manual: Boolean = false) extends Address(t){
   //num e manual somente para testes
   import Temporary._
-  var number = num
+  var number: Int = num
   if (!manual) {
     number = Temporary.counter
     Temporary.counter += 1

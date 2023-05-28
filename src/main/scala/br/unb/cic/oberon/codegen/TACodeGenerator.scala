@@ -4,6 +4,9 @@ import br.unb.cic.oberon.ir.ast.{Constant => ASTConstant, _}
 import br.unb.cic.oberon.ir.tac._
 import br.unb.cic.oberon.tc.{ExpressionTypeVisitor, TypeChecker}
 
+import scala.:+
+
+//noinspection DuplicatedCode
 object TACodeGenerator extends CodeGenerator[List[Instruction]] {
 
   private var tc = new TypeChecker()
@@ -23,8 +26,9 @@ object TACodeGenerator extends CodeGenerator[List[Instruction]] {
   // 4) constants: List[Constant], OK
   // 5) variables: List[VariableDeclaration], OK
   // 6) stmt: Statement OK
-  def generateProcedureDefinition(proc: Procedure, insts: List[Instruction]): TacModule = {
+  def generateProcedureDefinition(proc: Procedure, insts: List[Instruction]) : TacModule = {
 
+    // Precisa ser repensado
     val procedureVariables = proc.args.map { proc =>
       VariableDeclaration(proc.name, proc.argumentType)
     }.concat(proc.variables)
@@ -70,17 +74,15 @@ object TACodeGenerator extends CodeGenerator[List[Instruction]] {
           (acc, stm) => generateStatement(stm, acc)
         }
 
-      // Em implementação
       case ProcedureCallStmt(name, argsExps) =>
-        // 1) Antes do "Jump", precisaremos definir os valores
-        // dos registros a0, a1 até a7 caso existam sete argumentos
-        // 2) Após o "Jump", precisamos pegar o valor do return e
-        // jogar para um registro do tipo s (s1, s2 etc)
-        return insts :+ Jump(name, "")
+        val pushParams = argsExps.map { argument => { PushParam(new Temporary(argument.accept(expVisitor).get), "") } }
+        val functionCall = Call(name)
+        val popParam = PopParam(4, "")
+        pushParams :+ functionCall :+ popParam
 
       case IfElseStmt(condition, thenStmt, elseStmt) =>
-        val l1 = LabelGenerator.generateLabel
-        val l2 = if (elseStmt.isDefined) LabelGenerator.generateLabel else ""
+        val l1 = LabelGenerator.generateLabel()
+        val l2 = if (elseStmt.isDefined) LabelGenerator.generateLabel() else ""
         condition match {
           case EQExpression(left, right) =>
             val (l, insts1) = generateExpression(left, insts)
@@ -122,8 +124,8 @@ object TACodeGenerator extends CodeGenerator[List[Instruction]] {
         }
 
       case WhileStmt(condition, stmt) =>
-        val l1 = LabelGenerator.generateLabel
-        val l2 = LabelGenerator.generateLabel
+        val l1 = LabelGenerator.generateLabel()
+        val l2 = LabelGenerator.generateLabel()
         val insts1 = insts :+ Jump(l1, "") :+ NOp(l2)
         val insts2 = generateStatement(stmt, insts1) :+ NOp(l1)
 
@@ -210,116 +212,109 @@ object TACodeGenerator extends CodeGenerator[List[Instruction]] {
     }
   }
 
-  def generateExpression(expr: Expression, insts: List[Instruction]): (Address, List[Instruction]) = {
-    expr match {
+  def generateExpression(expression: Expression, instructions: List[Instruction]): (Address, List[Instruction]) = {
+    expression match {
 
       case Brackets(exp) =>
-        return generateExpression(exp, insts)
+         generateExpression(exp, instructions)
 
       case IntValue(value) =>
-        return (Constant(value.toString, IntegerType), insts)
+         (Constant(value.toString, IntegerType), instructions)
 
       case RealValue(value) =>
-        return (Constant(value.toString, RealType), insts)
+         (Constant(value.toString, RealType), instructions)
 
       case CharValue(value) =>
-        return (Constant(value.toString, CharacterType), insts)
+         (Constant(value.toString, CharacterType), instructions)
 
       case BoolValue(value) =>
-        return (Constant(value.toString, BooleanType), insts)
+         (Constant(value.toString, BooleanType), instructions)
 
       case StringValue(value) =>
-        return (Constant(value, StringType), insts)
+         (Constant(value, StringType), instructions)
 
       case NullValue =>
-        return (Constant("Null", NullType), insts)
+         (Constant("Null", NullType), instructions)
 
       case VarExpression(name) =>
-        return (Name(name, expr.accept(expVisitor).get), insts)
+         (Name(name, expression.accept(expVisitor).get), instructions)
 
       case AddExpression(left, right) =>
-        val (t, l, r, insts2) = generateBinaryExpression(left, right, insts, expr.accept(expVisitor).get)
-        return (t, insts2 :+ AddOp(l, r, t, ""))
+        val (t, l, r, insts2) = generateBinaryExpression(left, right, instructions, expression.accept(expVisitor).get)
+         (t, insts2 :+ AddOp(l, r, t, ""))
 
       case SubExpression(left, right) =>
-        val (t, l, r, insts2) = generateBinaryExpression(left, right, insts, expr.accept(expVisitor).get)
-        return (t, insts2 :+ SubOp(l, r, t, ""))
+        val (t, l, r, insts2) = generateBinaryExpression(left, right, instructions, expression.accept(expVisitor).get)
+         (t, insts2 :+ SubOp(l, r, t, ""))
 
       case MultExpression(left, right) =>
-        val (t, l, r, insts2) = generateBinaryExpression(left, right, insts, expr.accept(expVisitor).get)
-        return (t, insts2 :+ MulOp(l, r, t, ""))
+        val (t, l, r, insts2) = generateBinaryExpression(left, right, instructions, expression.accept(expVisitor).get)
+        (t, insts2 :+ MulOp(l, r, t, ""))
 
       case DivExpression(left, right) =>
-        val (t, l, r, insts2) = generateBinaryExpression(left, right, insts, expr.accept(expVisitor).get)
-
-        return (t, insts2 :+ DivOp(l, r, t, ""))
+        val (t, l, r, insts2) = generateBinaryExpression(left, right, instructions, expression.accept(expVisitor).get)
+         (t, insts2 :+ DivOp(l, r, t, ""))
 
       case AndExpression(left, right) =>
-        val (t, l, r, insts2) = generateBinaryExpression(left, right, insts, BooleanType)
-        return (t, insts2 :+ AndOp(l, r, t, ""))
+        val (t, l, r, insts2) = generateBinaryExpression(left, right, instructions, BooleanType)
+        (t, insts2 :+ AndOp(l, r, t, ""))
 
       case OrExpression(left, right) =>
-        val (t, l, r, insts2) = generateBinaryExpression(left, right, insts, BooleanType)
-        return (t, insts2 :+ OrOp(l, r, t, ""))
+        val (t, l, r, insts2) = generateBinaryExpression(left, right, instructions, BooleanType)
+        (t, insts2 :+ OrOp(l, r, t, ""))
 
       case ModExpression(left, right) =>
-        val (t, l, r, insts2) = generateBinaryExpression(left, right, insts, IntegerType)
-        return (t, insts2 :+ RemOp(l, r, t, ""))
+        val (t, l, r, insts2) = generateBinaryExpression(left, right, instructions, IntegerType)
+        (t, insts2 :+ RemOp(l, r, t, ""))
 
       case NotExpression(exp) =>
-        val (a, insts1) = generateExpression(exp, insts)
+        val (a, insts1) = generateExpression(exp, instructions)
         val t = new Temporary(BooleanType)
-        return (t, insts1 :+ NotOp(a, t, ""))
+        (t, insts1 :+ NotOp(a, t, ""))
 
       case EQExpression(left, right) =>
-        val (temps, l, r, insts2) = generateComparisonExpression(expr, left, right, insts)
-        val (t0, t1) = (temps(0), temps(1))
-        return (t1, insts2 :+ SubOp(l, r, t0, "") :+ SLTUOp(t0, Constant("1", IntegerType), t1, ""))
+        val (temps, l, r, insts2) = generateComparisonExpression(expression, left, right, instructions)
+        val (t0, t1) = (temps.head, temps(1))
+        (t1, insts2 :+ SubOp(l, r, t0, "") :+ SLTUOp(t0, Constant("1", IntegerType), t1, ""))
 
       case NEQExpression(left, right) =>
-        val (temps, l, r, insts2) = generateComparisonExpression(expr, left, right, insts)
-        val (t0, t1) = (temps(0), temps(1))
-        return (t1, insts2 :+ SubOp(l, r, t0, "") :+ SLTUOp(Constant("0", IntegerType), t0, t1, ""))
+        val (temps, l, r, insts2) = generateComparisonExpression(expression, left, right, instructions)
+        val (t0, t1) = (temps.head, temps(1))
+        (t1, insts2 :+ SubOp(l, r, t0, "") :+ SLTUOp(Constant("0", IntegerType), t0, t1, ""))
 
       case GTExpression(left, right) =>
-        val (temps, l, r, insts2) = generateComparisonExpression(expr, left, right, insts)
-        val t = temps(0)
-        return (t, insts2 :+ SLTOp(r, l, t, ""))
+        val (temps, l, r, insts2) = generateComparisonExpression(expression, left, right, instructions)
+        val t = temps.head
+        (t, insts2 :+ SLTOp(r, l, t, ""))
 
       case LTExpression(left, right) =>
-        val (temps, l, r, insts2) = generateComparisonExpression(expr, left, right, insts)
-        val t = temps(0)
-        return (t, insts2 :+ SLTOp(l, r, t, ""))
+        val (temps, l, r, insts2) = generateComparisonExpression(expression, left, right, instructions)
+        val t = temps.head
+        (t, insts2 :+ SLTOp(l, r, t, ""))
 
       case GTEExpression(left, right) =>
-        val (temps, l, r, insts2) = generateComparisonExpression(expr, left, right, insts)
-        val (t0, t1) = (temps(0), temps(1))
-        return (t1, insts2 :+ SLTOp(l, r, t0, "") :+ NotOp(t0, t1, ""))
+        val (temps, l, r, insts2) = generateComparisonExpression(expression, left, right, instructions)
+        val (t0, t1) = (temps.head, temps(1))
+        (t1, insts2 :+ SLTOp(l, r, t0, "") :+ NotOp(t0, t1, ""))
 
       case LTEExpression(left, right) =>
-        val (temps, l, r, insts2) = generateComparisonExpression(expr, left, right, insts)
-        val (t0, t1) = (temps(0), temps(1))
-        return (t1, insts2 :+ SLTOp(r, l, t0, "") :+ NotOp(t0, t1, ""))
+        val (temps, l, r, insts2) = generateComparisonExpression(expression, left, right, instructions)
+        val (t0, t1) = (temps.head, temps(1))
+        (t1, insts2 :+ SLTOp(r, l, t0, "") :+ NotOp(t0, t1, ""))
 
-      //      case FunctionCallExpression(name, args) =>
-      //        val (args, argInsts) = argsExps.foldLeft((List[Address](),insts)) {
-      //          (acc, expr) =>
-      //            val (address, ops) = TACodeGenerator.generateExpression(expr, acc._2)
-      //            (acc._1 :+ address, ops)
-      //        }
-      //        val params = args.map(x => Param(x, ""))
-      //        return (funcs.get(name), argInsts ++ params :+ Call(name, args.length), "")
+      // Em implementação
+      //case FunctionCallExpression(name, args) =>
 
       case ArraySubscript(array, index) =>
-        val (a, insts1) = generateExpression(array, insts)
+        val (a, insts1) = generateExpression(array, instructions)
         val (i, insts2) = generateExpression(index, insts1)
-        val t = new Temporary(expr.accept(expVisitor).get)
-        return (t, insts2 :+ ListGet(a, i, t, ""))
+        val t = new Temporary(expression.accept(expVisitor).get)
+        (t, insts2 :+ ListGet(a, i, t, ""))
 
       case PointerAccessExpression(name) =>
         val p = Name(name, LocationType)
-        val t = new Temporary(expr.accept(expVisitor).get)
-        return (t, insts :+ GetValue(p, t, ""))
+        val t = new Temporary(expression.accept(expVisitor).get)
+        (t, instructions :+ GetValue(p, t, ""))
 
       case FieldAccessExpression(exp, name) =>
         throw new Exception("FieldAccessExpression não foi implementada!")
@@ -338,7 +333,7 @@ object TACodeGenerator extends CodeGenerator[List[Instruction]] {
     val (r, insts2) = generateExpression(right, insts1)
     val temps = expr match {
       case GTExpression(_, _) | LTExpression(_, _) => List(new Temporary(BooleanType))
-      case other => List(new Temporary(BooleanType), new Temporary(BooleanType))
+      case _ => List(new Temporary(BooleanType), new Temporary(BooleanType))
     }
     (temps, l, r, insts2)
   }
@@ -362,9 +357,10 @@ object TACodeGenerator extends CodeGenerator[List[Instruction]] {
   def reset(): Unit = {
     tc = new TypeChecker()
     expVisitor = new ExpressionTypeVisitor(tc)
-    Temporary.reset
-    LabelGenerator.reset
+    Temporary.reset()
+    LabelGenerator.reset()
   }
+
 }
 
 object LabelGenerator {
