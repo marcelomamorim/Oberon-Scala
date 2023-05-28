@@ -483,9 +483,12 @@ class TACodeTest extends AnyFunSuite {
 
     val tacCodeList = TACodeGenerator.generateProcedureDefinition(procedure, List())
 
+    //TODO: Assertions
+    // assert()
+
   }
 
-  test("generate TAC from procedure06.oberon program") {
+  test("generate TAC from procedure01.oberon program") {
 
     val interpreter = new Interpreter()
     interpreter.setTestEnvironment()
@@ -495,7 +498,9 @@ class TACodeTest extends AnyFunSuite {
     val tacCodeFirstProcedure = TACodeGenerator
       .generateProcedureDefinition(module.procedures.head, List())
 
-    val tac = TACodeGenerator.generateStatement(module.stmt.getOrElse(ExitStmt()), List())
+    //val tac = TACodeGenerator.generateStatement(module.stmt.getOrElse(ExitStmt()), List())
+    //TODO: Assertions
+    // assert()
 
   }
 
