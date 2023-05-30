@@ -33,6 +33,8 @@ case class NotOp(s1: Address, dest: Address, label: String) extends UniOp(s1, de
 
 case class CopyOp(s1: Address, dest: Address, label: String) extends Instruction(label) {}
 
+case class CopyProcReturnOp(s1: Instruction, dest: Address, label: String) extends Instruction(label) {}
+
 case class NOp(label: String) extends Instruction(label) {}
 
 

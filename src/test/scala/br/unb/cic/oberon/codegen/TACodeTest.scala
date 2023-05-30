@@ -482,6 +482,7 @@ class TACodeTest extends AnyFunSuite {
     )
 
     val tacCodeList = TACodeGenerator.generateProcedureDefinition(procedure, List())
+    print(tacCodeList)
 
     //TODO: Assertions
     // assert()
@@ -495,10 +496,24 @@ class TACodeTest extends AnyFunSuite {
 
     val module = ScalaParser.parseResource("procedures/procedure01.oberon")
 
-    val tacCodeFirstProcedure = TACodeGenerator
-      .generateProcedureDefinition(module.procedures.head, List())
+    /**
+     * _SUM:
+     *   _t0 = v1 + v2
+     *   return t0
+     */
+    TACodeGenerator.generateProcedureDefinition(module.procedures.head, List())
 
-    //val tac = TACodeGenerator.generateStatement(module.stmt.getOrElse(ExitStmt()), List())
+    /**
+     * PushParam p1
+     * PushParam p2
+     * _t1 = Call(sum)
+     * PopParams N;
+     */
+    val tac = TACodeGenerator.generateStatement(module.stmt.getOrElse(ExitStmt()), List())
+    print("DEBUG ::::::::: " + tac)
+
+    print(tac)
+
     //TODO: Assertions
     // assert()
 

@@ -41,9 +41,9 @@ object TACodeGenerator extends CodeGenerator[List[Instruction]] {
 
     val instructions = generateStatement(proc.stmt, insts)
     val name = Name(proc.name, StringType)
-    val finalListOfAddress = List(name).concat(procedureConstants)
+    val finalListOfAddresses = List(name).concat(procedureConstants)
 
-    TacModule(finalListOfAddress, instructions)
+    TacModule(finalListOfAddresses, instructions)
 
   }
 
@@ -302,8 +302,15 @@ object TACodeGenerator extends CodeGenerator[List[Instruction]] {
         val (t0, t1) = (temps.head, temps(1))
         (t1, insts2 :+ SLTOp(r, l, t0, "") :+ NotOp(t0, t1, ""))
 
-      // Em implementação
-      //case FunctionCallExpression(name, args) =>
+        //TODO Dois casos:
+        // 1 - Void
+        // 2 - Retorno != void
+      case FunctionCallExpression(name, args) =>
+        val pushParams = args.map { argument => { PushParam(new Temporary(StringType), "") } }
+        val temporary = new Temporary(StringType)
+        val copyOp = CopyProcReturnOp(Call(name), temporary, "")
+        val popParam = PopParam(4, "")
+        (temporary, instructions.concat(pushParams :+ copyOp :+ popParam))
 
       case ArraySubscript(array, index) =>
         val (a, insts1) = generateExpression(array, instructions)
