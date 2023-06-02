@@ -1,13 +1,12 @@
 package br.unb.cic.oberon.ir.tac
-import br.unb.cic.oberon.ir.ast.Type
 
-class Address(t: Type){}
+class Address{}
 
-case class Name(id: String, t:Type) extends Address(t){}
+case class Name(id: String) extends Address{}
 
-case class Constant(value: String, t: Type) extends Address(t){}
+case class Constant(value: String) extends Address{}
 
-class Temporary(t: Type, num: Int = 0, manual: Boolean = false) extends Address(t){
+class Temporary(num: Int = 0, manual: Boolean = false) extends Address {
   //num e manual somente para testes
   import Temporary._
   var number: Int = num

@@ -9,9 +9,6 @@ import scala.:+
 //noinspection DuplicatedCode
 object TACodeGenerator extends CodeGenerator[List[Instruction]] {
 
-  private var tc = new TypeChecker()
-  private var expVisitor = new ExpressionTypeVisitor(tc)
-
   override def generateCode(module: OberonModule): List[Instruction] = {
     load_vars(module.variables, module.constants)
     module.stmt match {
@@ -28,22 +25,13 @@ object TACodeGenerator extends CodeGenerator[List[Instruction]] {
   // 6) stmt: Statement OK
   def generateProcedureDefinition(proc: Procedure, insts: List[Instruction]) : TacModule = {
 
-    // Precisa ser repensado
-    val procedureVariables = proc.args.map { proc =>
-      VariableDeclaration(proc.name, proc.argumentType)
-    }.concat(proc.variables)
-
-    load_vars(procedureVariables)
-
-    val procedureConstants = proc.constants.map { const =>
-      Constant(const.name, const.accept(expVisitor).get)
-    }
-
     val instructions = generateStatement(proc.stmt, insts)
-    val name = Name(proc.name, StringType)
-    val finalListOfAddresses = List(name).concat(procedureConstants)
 
-    TacModule(finalListOfAddresses, instructions)
+    val name = Name(proc.name)
+    val procedureConstants = proc.constants.map { const => Constant(const.name) }
+    val addresses = List(name).concat(procedureConstants)
+
+    TacModule(addresses, instructions)
 
   }
 
@@ -53,7 +41,7 @@ object TACodeGenerator extends CodeGenerator[List[Instruction]] {
         val (t, insts1) = generateExpression(exp, insts)
         designator match {
           case VarAssignment(varName) =>
-            val v = Name(varName, exp.accept(expVisitor).get)
+            val v = Name(varName)
             return insts1 :+ CopyOp(t, v, "")
 
           case ArrayAssignment(array, index) =>
@@ -62,7 +50,7 @@ object TACodeGenerator extends CodeGenerator[List[Instruction]] {
             return insts3 :+ ListSet(t, i, a, "")
 
           case PointerAssignment(pointerName) =>
-            val p = Name(pointerName, LocationType)
+            val p = Name(pointerName)
             return insts1 :+ SetPointer(t, p, "")
 
           case RecordAssignment(_, _) =>
@@ -75,7 +63,7 @@ object TACodeGenerator extends CodeGenerator[List[Instruction]] {
         }
 
       case ProcedureCallStmt(name, argsExps) =>
-        val pushParams = argsExps.map { argument => { PushParam(new Temporary(argument.accept(expVisitor).get), "") } }
+        val pushParams = argsExps.map { argument => { PushParam(new Temporary(), "") } }
         val functionCall = Call(name)
         val popParam = PopParam(4, "")
         pushParams :+ functionCall :+ popParam
@@ -170,22 +158,22 @@ object TACodeGenerator extends CodeGenerator[List[Instruction]] {
         }
 
       case ReadLongRealStmt(varName) =>
-        return insts :+ ReadLongReal(Name(varName, RealType), "")
+        return insts :+ ReadLongReal(Name(varName), "")
 
       case ReadRealStmt(varName) =>
-        return insts :+ ReadReal(Name(varName, RealType), "")
+        return insts :+ ReadReal(Name(varName), "")
 
       case ReadLongIntStmt(varName) =>
-        return insts :+ ReadLongInt(Name(varName, IntegerType), "")
+        return insts :+ ReadLongInt(Name(varName), "")
 
       case ReadIntStmt(varName) =>
-        return insts :+ ReadInt(Name(varName, IntegerType), "")
+        return insts :+ ReadInt(Name(varName), "")
 
       case ReadShortIntStmt(varName) =>
-        return insts :+ ReadShortInt(Name(varName, IntegerType), "")
+        return insts :+ ReadShortInt(Name(varName), "")
 
       case ReadCharStmt(varName) =>
-        return insts :+ ReadChar(Name(varName, StringType), "")
+        return insts :+ ReadChar(Name(varName), "")
 
       case WriteStmt(expression) =>
         val (t, insts1) = generateExpression(expression, insts)
@@ -219,68 +207,68 @@ object TACodeGenerator extends CodeGenerator[List[Instruction]] {
          generateExpression(exp, instructions)
 
       case IntValue(value) =>
-         (Constant(value.toString, IntegerType), instructions)
+         (Constant(value.toString), instructions)
 
       case RealValue(value) =>
-         (Constant(value.toString, RealType), instructions)
+         (Constant(value.toString), instructions)
 
       case CharValue(value) =>
-         (Constant(value.toString, CharacterType), instructions)
+         (Constant(value.toString), instructions)
 
       case BoolValue(value) =>
-         (Constant(value.toString, BooleanType), instructions)
+         (Constant(value.toString), instructions)
 
       case StringValue(value) =>
-         (Constant(value, StringType), instructions)
+         (Constant(value), instructions)
 
       case NullValue =>
-         (Constant("Null", NullType), instructions)
+         (Constant("Null"), instructions)
 
       case VarExpression(name) =>
-         (Name(name, expression.accept(expVisitor).get), instructions)
+         (Name(name), instructions)
 
       case AddExpression(left, right) =>
-        val (t, l, r, insts2) = generateBinaryExpression(left, right, instructions, expression.accept(expVisitor).get)
+        val (t, l, r, insts2) = generateBinaryExpression(left, right, instructions)
          (t, insts2 :+ AddOp(l, r, t, ""))
 
       case SubExpression(left, right) =>
-        val (t, l, r, insts2) = generateBinaryExpression(left, right, instructions, expression.accept(expVisitor).get)
+        val (t, l, r, insts2) = generateBinaryExpression(left, right, instructions)
          (t, insts2 :+ SubOp(l, r, t, ""))
 
       case MultExpression(left, right) =>
-        val (t, l, r, insts2) = generateBinaryExpression(left, right, instructions, expression.accept(expVisitor).get)
+        val (t, l, r, insts2) = generateBinaryExpression(left, right, instructions)
         (t, insts2 :+ MulOp(l, r, t, ""))
 
       case DivExpression(left, right) =>
-        val (t, l, r, insts2) = generateBinaryExpression(left, right, instructions, expression.accept(expVisitor).get)
+        val (t, l, r, insts2) = generateBinaryExpression(left, right, instructions)
          (t, insts2 :+ DivOp(l, r, t, ""))
 
       case AndExpression(left, right) =>
-        val (t, l, r, insts2) = generateBinaryExpression(left, right, instructions, BooleanType)
+        val (t, l, r, insts2) = generateBinaryExpression(left, right, instructions)
         (t, insts2 :+ AndOp(l, r, t, ""))
 
       case OrExpression(left, right) =>
-        val (t, l, r, insts2) = generateBinaryExpression(left, right, instructions, BooleanType)
+        val (t, l, r, insts2) = generateBinaryExpression(left, right, instructions)
         (t, insts2 :+ OrOp(l, r, t, ""))
 
       case ModExpression(left, right) =>
-        val (t, l, r, insts2) = generateBinaryExpression(left, right, instructions, IntegerType)
+        val (t, l, r, insts2) = generateBinaryExpression(left, right, instructions)
         (t, insts2 :+ RemOp(l, r, t, ""))
 
       case NotExpression(exp) =>
         val (a, insts1) = generateExpression(exp, instructions)
-        val t = new Temporary(BooleanType)
+        val t = new Temporary()
         (t, insts1 :+ NotOp(a, t, ""))
 
       case EQExpression(left, right) =>
         val (temps, l, r, insts2) = generateComparisonExpression(expression, left, right, instructions)
         val (t0, t1) = (temps.head, temps(1))
-        (t1, insts2 :+ SubOp(l, r, t0, "") :+ SLTUOp(t0, Constant("1", IntegerType), t1, ""))
+        (t1, insts2 :+ SubOp(l, r, t0, "") :+ SLTUOp(t0, Constant("1"), t1, ""))
 
       case NEQExpression(left, right) =>
         val (temps, l, r, insts2) = generateComparisonExpression(expression, left, right, instructions)
         val (t0, t1) = (temps.head, temps(1))
-        (t1, insts2 :+ SubOp(l, r, t0, "") :+ SLTUOp(Constant("0", IntegerType), t0, t1, ""))
+        (t1, insts2 :+ SubOp(l, r, t0, "") :+ SLTUOp(Constant("0"), t0, t1, ""))
 
       case GTExpression(left, right) =>
         val (temps, l, r, insts2) = generateComparisonExpression(expression, left, right, instructions)
@@ -306,8 +294,8 @@ object TACodeGenerator extends CodeGenerator[List[Instruction]] {
         // 1 - Void
         // 2 - Retorno != void
       case FunctionCallExpression(name, args) =>
-        val pushParams = args.map { argument => { PushParam(new Temporary(StringType), "") } }
-        val temporary = new Temporary(StringType)
+        val pushParams = args.map { argument => { PushParam(new Temporary(), "") } }
+        val temporary = new Temporary()
         val copyOp = CopyProcReturnOp(Call(name), temporary, "")
         val popParam = PopParam(4, "")
         (temporary, instructions.concat(pushParams :+ copyOp :+ popParam))
@@ -315,12 +303,12 @@ object TACodeGenerator extends CodeGenerator[List[Instruction]] {
       case ArraySubscript(array, index) =>
         val (a, insts1) = generateExpression(array, instructions)
         val (i, insts2) = generateExpression(index, insts1)
-        val t = new Temporary(expression.accept(expVisitor).get)
+        val t = new Temporary()
         (t, insts2 :+ ListGet(a, i, t, ""))
 
       case PointerAccessExpression(name) =>
-        val p = Name(name, LocationType)
-        val t = new Temporary(expression.accept(expVisitor).get)
+        val p = Name(name)
+        val t = new Temporary()
         (t, instructions :+ GetValue(p, t, ""))
 
       case FieldAccessExpression(exp, name) =>
@@ -328,10 +316,10 @@ object TACodeGenerator extends CodeGenerator[List[Instruction]] {
     }
   }
 
-  private def generateBinaryExpression(left: Expression, right: Expression, insts: List[Instruction], exprType: Type): (Address, Address, Address, List[Instruction]) = {
+  private def generateBinaryExpression(left: Expression, right: Expression, insts: List[Instruction]): (Address, Address, Address, List[Instruction]) = {
     val (l, insts1) = generateExpression(left, insts)
     val (r, insts2) = generateExpression(right, insts1)
-    val t = new Temporary(exprType)
+    val t = new Temporary()
     (t, l, r, insts2)
   }
 
@@ -339,8 +327,8 @@ object TACodeGenerator extends CodeGenerator[List[Instruction]] {
     val (l, insts1) = generateExpression(left, insts)
     val (r, insts2) = generateExpression(right, insts1)
     val temps = expr match {
-      case GTExpression(_, _) | LTExpression(_, _) => List(new Temporary(BooleanType))
-      case _ => List(new Temporary(BooleanType), new Temporary(BooleanType))
+      case GTExpression(_, _) | LTExpression(_, _) => List(new Temporary())
+      case _ => List(new Temporary(), new Temporary())
     }
     (temps, l, r, insts2)
   }
@@ -357,13 +345,11 @@ object TACodeGenerator extends CodeGenerator[List[Instruction]] {
 
 
   def load_vars(vars: List[VariableDeclaration], consts: List[ASTConstant] = List()): Unit = {
-    OberonModule("test", Set(), List(), consts, vars, List(), None).accept(tc)
+    OberonModule("test", Set(), List(), consts, vars, List(), None)
   }
 
   //somente para testes
   def reset(): Unit = {
-    tc = new TypeChecker()
-    expVisitor = new ExpressionTypeVisitor(tc)
     Temporary.reset()
     LabelGenerator.reset()
   }

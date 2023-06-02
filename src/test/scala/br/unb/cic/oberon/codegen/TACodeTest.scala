@@ -8,6 +8,7 @@ import org.scalatest.funsuite.AnyFunSuite
 
 class TACodeTest extends AnyFunSuite {
 
+
   test("Generate add between constants") {
 
     TACodeGenerator.reset
@@ -16,8 +17,8 @@ class TACodeTest extends AnyFunSuite {
     // 1 + 2
 
     Temporary.reset
-    val t0 = new Temporary(IntegerType, 0, true)
-    val ops = List(AddOp(Constant("1", IntegerType), Constant("2", IntegerType), t0, ""))
+    val t0 = new Temporary(0, true)
+    val ops = List(AddOp(Constant("1"), Constant("2"), t0, ""))
     // t0 = 1 + 2
 
     assert(list == ops)
@@ -31,11 +32,11 @@ class TACodeTest extends AnyFunSuite {
     val (t, list) = TACodeGenerator.generateExpression(expr, List())
 
     TACodeGenerator.reset
-    val t0 = new Temporary(IntegerType, 0, true)
-    val t1 = new Temporary(IntegerType, 1, true)
+    val t0 = new Temporary( 0, true)
+    val t1 = new Temporary( 1, true)
     val ops = List(
-      AddOp(Constant("1", IntegerType), Constant("2", IntegerType), t0, ""),
-      AddOp(t0, Constant("3", IntegerType), t1, "")
+      AddOp(Constant("1" ), Constant("2"), t0, ""),
+      AddOp(t0, Constant("3"), t1, "")
     )
 
     assert(list == ops)
@@ -48,12 +49,12 @@ class TACodeTest extends AnyFunSuite {
     val (t, list) = TACodeGenerator.generateExpression(expr, List())
 
     TACodeGenerator.reset
-    val t0 = new Temporary(IntegerType, 0, true)
-    val t1 = new Temporary(IntegerType, 1, true)
-    val t2 = new Temporary(IntegerType, 2, true)
+    val t0 = new Temporary(0, true)
+    val t1 = new Temporary(1, true)
+    val t2 = new Temporary(2, true)
     val ops = List(
-      AddOp(Constant("1", IntegerType), Constant("2", IntegerType), t0, ""),
-      AddOp(Constant("3", IntegerType), Constant("4", IntegerType), t1, ""),
+      AddOp(Constant("1"), Constant("2"), t0, ""),
+      AddOp(Constant("3"), Constant("4"), t1, ""),
       AddOp(t0, t1, t2, "")
     )
 
@@ -68,13 +69,13 @@ class TACodeTest extends AnyFunSuite {
     // ((2 * 2) / 3) - 6
 
     TACodeGenerator.reset
-    val t0 = new Temporary(IntegerType, 0, true)
-    val t1 = new Temporary(IntegerType, 1, true)
-    val t2 = new Temporary(IntegerType, 2, true)
+    val t0 = new Temporary(0, true)
+    val t1 = new Temporary(1, true)
+    val t2 = new Temporary(2, true)
     val ops = List(
-      MulOp(Constant("2", IntegerType), Constant("2", IntegerType), t0, ""),
-      DivOp(t0, Constant("3", IntegerType), t1, ""),
-      SubOp(t1, Constant("6", IntegerType), t2, "")
+      MulOp(Constant("2"), Constant("2"), t0, ""),
+      DivOp(t0, Constant("3"), t1, ""),
+      SubOp(t1, Constant("6"), t2, "")
     )
     // t0 = 2 * 2
     // t1 = t0 / 3
@@ -91,16 +92,16 @@ class TACodeTest extends AnyFunSuite {
     // (True and False) or (True or (True and False))
 
     TACodeGenerator.reset
-    val t0 = new Temporary(BooleanType, 0, true)
-    val t1 = new Temporary(BooleanType, 1, true)
-    val t2 = new Temporary(BooleanType, 2, true)
-    val t3 = new Temporary(BooleanType, 3, true)
-    val t4 = new Temporary(BooleanType, 4, true)
+    val t0 = new Temporary( 0, true)
+    val t1 = new Temporary(1, true)
+    val t2 = new Temporary(2, true)
+    val t3 = new Temporary(3, true)
+    val t4 = new Temporary(4, true)
     val ops = List(
-      AndOp(Constant("true", BooleanType), Constant("false", BooleanType), t0, ""),
-      NotOp(Constant("true", BooleanType), t1, ""),
-      AndOp(Constant("true", BooleanType), t1, t2, ""),
-      OrOp(Constant("true", BooleanType), t2, t3, ""),
+      AndOp(Constant("true"), Constant("false"), t0, ""),
+      NotOp(Constant("true"), t1, ""),
+      AndOp(Constant("true"), t1, t2, ""),
+      OrOp(Constant("true"), t2, t3, ""),
       OrOp(t0, t3, t4, "")
     )
     // t0 = true and false
@@ -120,9 +121,9 @@ class TACodeTest extends AnyFunSuite {
     // not(true)
 
     TACodeGenerator.reset
-    val t0 = new Temporary(BooleanType, 0, true)
+    val t0 = new Temporary(0, true)
     val ops = List(
-      NotOp(Constant("true", BooleanType), t0, "")
+      NotOp(Constant("true"), t0, "")
     )
     // t0 = not true
 
@@ -147,11 +148,11 @@ class TACodeTest extends AnyFunSuite {
     // (1 == 2)
 
     TACodeGenerator.reset
-    val t0 = new Temporary(IntegerType, 0, true)
-    val t1 = new Temporary(IntegerType, 1, true)
+    val t0 = new Temporary(0, true)
+    val t1 = new Temporary(1, true)
     val ops = List(
-      SubOp(Constant("1", IntegerType), Constant("2", IntegerType), t0, ""),
-      SLTUOp(t0, Constant("1", IntegerType), t1, "")
+      SubOp(Constant("1"), Constant("2"), t0, ""),
+      SLTUOp(t0, Constant("1"), t1, "")
     )
     // t0 = 1 - 2
     // t1 = sltuop t0 1
@@ -167,11 +168,11 @@ class TACodeTest extends AnyFunSuite {
     // (1 != 2)
 
     TACodeGenerator.reset
-    val t0 = new Temporary(IntegerType, 0, true)
-    val t1 = new Temporary(IntegerType, 1, true)
+    val t0 = new Temporary(0, true)
+    val t1 = new Temporary(1, true)
     val ops = List(
-      SubOp(Constant("1", IntegerType), Constant("2", IntegerType), t0, ""),
-      SLTUOp(Constant("0", IntegerType), t0, t1, "")
+      SubOp(Constant("1"), Constant("2"), t0, ""),
+      SLTUOp(Constant("0"), t0, t1, "")
     )
     // t0 = 1 - 2
     // t1 = sltuop t0 1
@@ -187,9 +188,9 @@ class TACodeTest extends AnyFunSuite {
     // (1 < 2)
 
     TACodeGenerator.reset
-    val t0 = new Temporary(IntegerType, 0, true)
+    val t0 = new Temporary( 0, true)
     val ops = List(
-      SLTOp(Constant("1", IntegerType), Constant("2", IntegerType), t0, "")
+      SLTOp(Constant("1"), Constant("2"), t0, "")
     )
     // t0 = slt 1 2
 
@@ -204,9 +205,9 @@ class TACodeTest extends AnyFunSuite {
     // (1 > 2)
 
     TACodeGenerator.reset
-    val t0 = new Temporary(IntegerType, 0, true)
+    val t0 = new Temporary(0, true)
     val ops = List(
-      SLTOp(Constant("2", IntegerType), Constant("1", IntegerType), t0, "")
+      SLTOp(Constant("2"), Constant("1"), t0, "")
     )
     // t0 = 1 > 2
 
@@ -222,10 +223,10 @@ class TACodeTest extends AnyFunSuite {
     // (1 >= 2)
 
     TACodeGenerator.reset
-    val t0 = new Temporary(IntegerType, 0, true)
-    val t1 = new Temporary(IntegerType, 1, true)
+    val t0 = new Temporary( 0, true)
+    val t1 = new Temporary( 1, true)
     val ops = List(
-      SLTOp(Constant("1", IntegerType), Constant("2", IntegerType), t0, ""),
+      SLTOp(Constant("1"), Constant("2"), t0, ""),
       NotOp(t0, t1, "")
     )
     // t0 = slt 1 2
@@ -242,10 +243,10 @@ class TACodeTest extends AnyFunSuite {
     // (1 <= 2)
 
     TACodeGenerator.reset
-    val t0 = new Temporary(IntegerType, 0, true)
-    val t1 = new Temporary(IntegerType, 1, true)
+    val t0 = new Temporary( 0, true)
+    val t1 = new Temporary( 1, true)
     val ops = List(
-      SLTOp(Constant("2", IntegerType), Constant("1", IntegerType), t0, ""),
+      SLTOp(Constant("2"), Constant("1"), t0, ""),
       NotOp(t0, t1, "")
     )
     // t0 = slt 2 1
@@ -262,7 +263,7 @@ class TACodeTest extends AnyFunSuite {
     val expr = VarExpression("var")
     val (t, list) = TACodeGenerator.generateExpression(expr, List())
 
-    val ops = Name("var", IntegerType)
+    val ops = Name("var")
     // var
     assert(t == ops)
   }
@@ -276,24 +277,24 @@ class TACodeTest extends AnyFunSuite {
     val expr = ArraySubscript(VarExpression("lista"), IntValue(2))
     val (t, list) = TACodeGenerator.generateExpression(expr, List())
 
-    val t0 = new Temporary(IntegerType, 0, true)
+    val t0 = new Temporary( 0, true)
     val ops = List(
-      ListGet(Name("lista", ArrayType(4, IntegerType)), Constant("2", IntegerType), t0, "")
+      ListGet(Name("lista"), Constant("2"), t0, "")
     )
     // lista[2]
     assert(list == ops)
   }
   test("Testing PointerAccessExpression"){
-    TACodeGenerator.reset
+    TACodeGenerator.reset()
     val list_var = List(VariableDeclaration("pointer", PointerType(IntegerType)))
     TACodeGenerator.load_vars(list_var)
 
     val expr = PointerAccessExpression("pointer")
     val (t, list) = TACodeGenerator.generateExpression(expr, List())
 
-    val t0 = new Temporary(IntegerType, 0, true)
+    val t0 = new Temporary(0, true)
     val ops = List(
-      GetValue(Name("pointer", LocationType), t0, "")
+      GetValue(Name("pointer"), t0, "")
     )
     // t0 = *pointer;
 
@@ -310,10 +311,10 @@ class TACodeTest extends AnyFunSuite {
     val stmt = AssignmentStmt(VarAssignment("var"), AddExpression(IntValue(1), IntValue(2)))
     val list = TACodeGenerator.generateStatement(stmt, List())
 
-    val t0 = new Temporary(IntegerType, 0, true)
+    val t0 = new Temporary(0, true)
     val ops = List(
-      AddOp(Constant("1", IntegerType), Constant("2", IntegerType), t0, ""),
-      CopyOp(t0, Name("var", IntegerType), "")
+      AddOp(Constant("1"), Constant("2"), t0, ""),
+      CopyOp(t0, Name("var"), "")
     )
     // var = 1+2
     assert(list == ops)
@@ -329,10 +330,10 @@ class TACodeTest extends AnyFunSuite {
             )
     val list = TACodeGenerator.generateStatement(stmt, List())
 
-    val t0 = new Temporary(IntegerType, 0, true)
+    val t0 = new Temporary(0, true)
     val ops = List(
-      AddOp(Constant("2", IntegerType), Constant("3", IntegerType), t0, ""),
-      ListSet(t0, Constant("1", IntegerType), Name("lista", ArrayType(4,IntegerType)), "")
+      AddOp(Constant("2"), Constant("3"), t0, ""),
+      ListSet(t0, Constant("1"), Name("lista"), "")
     )
     // lista[1] = 2+3
     assert(list == ops)
@@ -348,10 +349,10 @@ class TACodeTest extends AnyFunSuite {
             )
     val list = TACodeGenerator.generateStatement(stmt, List())
 
-    val t0 = new Temporary(IntegerType, 0, true)
+    val t0 = new Temporary(0, true)
     val ops = List(
-      AddOp(Constant("2", IntegerType), Constant("3", IntegerType), t0, ""),
-      SetPointer(t0, Name("pointer", LocationType), "")
+      AddOp(Constant("2"), Constant("3"), t0, ""),
+      SetPointer(t0, Name("pointer"), "")
     )
     // *pointer = 2+3
     assert(list == ops)
@@ -371,12 +372,12 @@ class TACodeTest extends AnyFunSuite {
 
     TACodeGenerator.reset
 
-    val t0 = new Temporary(IntegerType, 0, true)
+    val t0 = new Temporary(0, true)
     val l1 = LabelGenerator.generateLabel
     val ops = List(
-      NeqJump(Constant("0", IntegerType), Constant("0", IntegerType), l1, ""),
-      AddOp(Constant("1", IntegerType), Constant("2", IntegerType), t0, ""),
-      CopyOp(t0, Name("var", IntegerType), ""),
+      NeqJump(Constant("0"), Constant("0"), l1, ""),
+      AddOp(Constant("1"), Constant("2"), t0, ""),
+      CopyOp(t0, Name("var"), ""),
       NOp(l1)
       )
     // if(1==1){var = 1 + 2}
@@ -396,20 +397,20 @@ class TACodeTest extends AnyFunSuite {
 
 
     TACodeGenerator.reset
-    val t0 = new Temporary(IntegerType, 0, true)
-    val t1 = new Temporary(IntegerType, 1, true)
-    val t2 = new Temporary(IntegerType, 2, true)
+    val t0 = new Temporary(0, true)
+    val t1 = new Temporary(1, true)
+    val t2 = new Temporary(2, true)
     val l1 = LabelGenerator.generateLabel
     val l2 = LabelGenerator.generateLabel
     val ops = List(
-      OrOp(Constant("true", BooleanType), Constant("false", BooleanType), t0, ""),
+      OrOp(Constant("true"), Constant("false"), t0, ""),
       JumpFalse(t0, l1, ""),
-      AddOp(Constant("1", IntegerType), Constant("2", IntegerType), t1, ""),
-      CopyOp(t1, Name("var", IntegerType), ""),
+      AddOp(Constant("1"), Constant("2"), t1, ""),
+      CopyOp(t1, Name("var"), ""),
       Jump(l2, ""),
       NOp(l1),
-      SubOp(Constant("3", IntegerType), Constant("2", IntegerType), t2, ""),
-      CopyOp(t2, Name("var", IntegerType), ""),
+      SubOp(Constant("3"), Constant("2"), t2, ""),
+      CopyOp(t2, Name("var"), ""),
       NOp(l2)
     )
     // if(1|0){var = 1 + 2} else {var = 3 - 2}
@@ -428,12 +429,12 @@ class TACodeTest extends AnyFunSuite {
     val list = TACodeGenerator.generateStatement(ifElseStmt, List())
     TACodeGenerator.reset
 
-    val t0 = new Temporary(IntegerType, 0, true)
+    val t0 = new Temporary(0, true)
     val l1 = LabelGenerator.generateLabel
     val ops = List(
-      JumpTrue(Constant("false", BooleanType), l1, ""),
-      AddOp(Constant("1", IntegerType), Constant("2", IntegerType), t0, ""),
-      CopyOp(t0, Name("var", IntegerType), ""),
+      JumpTrue(Constant("false"), l1, ""),
+      AddOp(Constant("1"), Constant("2"), t0, ""),
+      CopyOp(t0, Name("var"), ""),
       NOp(l1),
       )
     // if(!(false)){var = 1 + 2}
@@ -452,16 +453,16 @@ class TACodeTest extends AnyFunSuite {
     val list = TACodeGenerator.generateStatement(whileStmt, List())
 
     TACodeGenerator.reset
-    val t0 = new Temporary(IntegerType, 0, true)
+    val t0 = new Temporary(0, true)
     val l1 = LabelGenerator.generateLabel
     val l2 = LabelGenerator.generateLabel
     val ops = List(
       Jump(l1, ""),
       NOp(l2),
-      AddOp(Name("var", IntegerType), Constant("1", IntegerType), t0, ""),
-      CopyOp(t0, Name("var", IntegerType), ""),
+      AddOp(Name("var"), Constant("1"), t0, ""),
+      CopyOp(t0, Name("var"), ""),
       NOp(l1),
-      LTEJump(Name("var", IntegerType), Constant("5", IntegerType), l2, ""),
+      LTEJump(Name("var"), Constant("5"), l2, ""),
     )
     // while(var < 5){var = var + 1}
     assert(list == ops)
@@ -501,7 +502,7 @@ class TACodeTest extends AnyFunSuite {
      *   _t0 = v1 + v2
      *   return t0
      */
-    TACodeGenerator.generateProcedureDefinition(module.procedures.head, List())
+    val tacProcedureDeclaration = TACodeGenerator.generateProcedureDefinition(module.procedures.head, List())
 
     /**
      * PushParam p1
@@ -509,13 +510,10 @@ class TACodeTest extends AnyFunSuite {
      * _t1 = Call(sum)
      * PopParams N;
      */
-    val tac = TACodeGenerator.generateStatement(module.stmt.getOrElse(ExitStmt()), List())
-    print("DEBUG ::::::::: " + tac)
-
-    print(tac)
+    val tacProcedureCall = TACodeGenerator.generateStatement(module.stmt.getOrElse(ExitStmt()), List())
 
     //TODO: Assertions
-    // assert()
+    // - assert()
 
   }
 
