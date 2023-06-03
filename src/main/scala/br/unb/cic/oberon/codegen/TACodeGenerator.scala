@@ -2,7 +2,6 @@ package br.unb.cic.oberon.codegen
 
 import br.unb.cic.oberon.ir.ast.{Constant => ASTConstant, _}
 import br.unb.cic.oberon.ir.tac._
-import br.unb.cic.oberon.tc.{ExpressionTypeVisitor, TypeChecker}
 
 import scala.:+
 
@@ -10,7 +9,6 @@ import scala.:+
 object TACodeGenerator extends CodeGenerator[List[Instruction]] {
 
   override def generateCode(module: OberonModule): List[Instruction] = {
-    load_vars(module.variables, module.constants)
     module.stmt match {
       case Some(stm) => generateStatement(stm, List())
       case None => List()

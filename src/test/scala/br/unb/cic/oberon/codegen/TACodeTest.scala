@@ -492,9 +492,6 @@ class TACodeTest extends AnyFunSuite {
 
   test("generate TAC from procedure01.oberon program") {
 
-    val interpreter = new Interpreter()
-    interpreter.setTestEnvironment()
-
     val module = ScalaParser.parseResource("procedures/procedure01.oberon")
 
     /**
@@ -511,9 +508,31 @@ class TACodeTest extends AnyFunSuite {
      * PopParams N;
      */
     val tacProcedureCall = TACodeGenerator.generateStatement(module.stmt.getOrElse(ExitStmt()), List())
+    print(tacProcedureCall)
 
     //TODO: Assertions
-    // - assert()
+    // assert()
+
+  }
+
+
+  test("generate TAC from procedure02.oberon program") {
+
+  }
+
+  test("generate TAC from procedure03.oberon program") {
+
+  }
+
+  test("generate TAC from procedure04.oberon program") {
+
+  }
+
+  test("generate TAC from procedure05.oberon program") {
+
+  }
+
+  test("generate TAC from procedure06.oberon program") {
 
   }
 
