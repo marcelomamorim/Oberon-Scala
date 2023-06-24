@@ -1,0 +1,42 @@
+MODULE bee2779;
+
+VAR
+  a : ARRAY 3 OF INTEGER;
+  cnt : ARRAY 11 OF INTEGER;
+  i, answer, n, m : INTEGER;
+
+BEGIN
+  a[0] := 5;
+  a[1] := 8;
+  a[2] := 3;
+
+  cnt[0] := 0;
+  cnt[1] := 0;
+  cnt[2] := 0;
+  cnt[3] := 0;
+  cnt[4] := 0;
+  cnt[5] := 0;
+  cnt[6] := 0;
+  cnt[7] := 0;
+  cnt[8] := 0;
+  cnt[9] := 0;
+  
+  i := 0;
+  n := 10;
+  m := 3;
+
+  answer := n;
+
+  REPEAT
+    INC(cnt[a[i]]);
+
+    IF (cnt[a[i]] = 1) THEN
+      DEC(answer)
+    END;
+        
+    INC(i)
+  UNTIL (i = 3)
+
+END
+
+END bee2779.

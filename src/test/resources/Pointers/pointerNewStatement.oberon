@@ -1,0 +1,15 @@
+MODULE PointerNewStatement;
+
+VAR
+   x, y: INTEGER;
+   p : POINTER TO INTEGER;
+
+
+BEGIN
+  NEW(p);
+  p^ := 10;
+  x := 100;
+  y := 1000
+END
+
+END  PointerNewStatement.

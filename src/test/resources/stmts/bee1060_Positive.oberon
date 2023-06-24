@@ -1,0 +1,29 @@
+MODULE bee1060Positive;
+
+VAR
+    a : ARRAY 6 OF REAL;
+    i : INTEGER;
+    ans, v : REAL;
+
+BEGIN
+    i := 0;
+    ans := 0;
+
+    a[0] := 7;
+    a[1] := -5;
+    a[2] := 6;
+    a[3] := -3.4;
+    a[4] := 4.6;
+    a[5] := 12;
+    
+    REPEAT
+        IF(a[i] >= 0) THEN
+            INC(ans)
+        END;
+        
+        INC(i)
+    UNTIL (i = 6)
+
+END
+
+END bee1060Positive.compile

@@ -1,0 +1,6 @@
+MODULE SimpleModule1;
+
+CONST
+  x = 5;
+
+END SimpleModule1.
