@@ -28,7 +28,7 @@ object TACodeGenerator extends CodeGenerator[List[TAC]] {
         designator match {
           case VarAssignment(varName) =>
             val v = Name(varName, exp.accept(expVisitor).get)
-            return insts1 :+ CopyOp(t, v, "") 
+            return insts1 :+ MoveOp(t, v, "") 
 
           case ArrayAssignment(array, index) =>
             val (a, insts2) = generateExpression(array, insts1)
