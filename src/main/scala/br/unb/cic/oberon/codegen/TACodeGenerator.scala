@@ -48,15 +48,29 @@ object TACodeGenerator extends CodeGenerator[List[TAC]] {
           (acc, stm) => generateStatement(stm, acc)
         }
 
-// No final não conseguimos implementar a geração de procedures
-//      case ProcedureCallStmt(name, argsExps) =>
-//        val (args, argInsts) = argsExps.foldLeft((List[Address](),insts)) {
-//          (acc, expr) => 
-//            val (address, ops) = TACodeGenerator.generateExpression(expr, acc._2)
-//            (acc._1 :+ address, ops)
-//        }
-//        val params = args.map(x => Param(x, ""))
-//        return argInsts ++ params :+ Call(name, args.length, "")
+      case ProcedureCallStmt(name, argsExps) =>{
+        val argsTAC = argsExps.map(exp => generateExpression(exp,List()))
+        val TACops = argsTAC.flatMap {
+          case (_, tac: List[TAC]) => tac
+        }
+        val param = argsTAC.map(_._1).map{
+          case t: Temporary => (List[TAC](),Param(t,""))
+          case name1: Name => {
+            val t = new Temporary(name1.t)
+            (List(MoveOp(name1, t, "")), Param(t,""))
+          }
+          case const: Constant => {
+            val t = new Temporary(const.t)
+            (List(MoveOp(const, t, "")), Param(t, ""))
+          }
+        }
+
+        val paramops = param.map(_._1)
+        val paramops2 = paramops.flatten
+        val param2 = param.map(_._2)
+
+        insts++TACops++paramops2++param2:+Call(name, argsExps.length, "")
+      }
 
       case IfElseStmt(condition, thenStmt, elseStmt) =>
         val l1 = LabelGenerator.generateLabel
