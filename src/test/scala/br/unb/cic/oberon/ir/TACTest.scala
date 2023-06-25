@@ -3,7 +3,7 @@ package br.unb.cic.oberon.ir.tac
 import br.unb.cic.oberon.ir.ast._
 import org.scalatest.funsuite.AnyFunSuite
 
-class TACTestSuite extends AnyFunSuite {
+class InstructionTestSuite extends AnyFunSuite {
   test("Test temporary counter") {
     Temporary.reset
     val t0 = new Temporary(IntegerType)

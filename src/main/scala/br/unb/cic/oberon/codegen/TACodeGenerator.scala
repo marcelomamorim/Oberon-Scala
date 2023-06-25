@@ -1,15 +1,15 @@
 package br.unb.cic.oberon.codegen
 
-import br.unb.cic.oberon.ir.ast.{Constant => ASTConstant, _}
+import br.unb.cic.oberon.ir.ast.{ Constant => ASTConstant, _ }
 import br.unb.cic.oberon.ir.tac._
-import br.unb.cic.oberon.tc.{ExpressionTypeVisitor, TypeChecker}
+import br.unb.cic.oberon.tc.{ ExpressionTypeVisitor, TypeChecker }
 
-object TACodeGenerator extends CodeGenerator[List[TAC]] {
+object TACodeGenerator extends CodeGenerator[List[Instruction]] {
   
   private var tc = new TypeChecker()
   private var expVisitor = new ExpressionTypeVisitor(tc)
 
-  override def generateCode(module: OberonModule): List[TAC] = {
+  override def generateCode(module: OberonModule): List[Instruction] = {
 
     load_vars(module.variables, module.constants)
 
@@ -27,9 +27,27 @@ object TACodeGenerator extends CodeGenerator[List[TAC]] {
 
   }
 
+  // 1) name: String, OK
+  // 2) args: List[FormalArg], OK
+  // 3) returnType: Option[Type], OK
+  // 4) constants: List[Constant], OK
+  // 5) variables: List[VariableDeclaration], OK
+  // 6) stmt: Statement OK
+  def generateProcedureDefinition(proc: Procedure, insts: List[Instruction]): TacModule = {
+
+    val instructions = generateStatement(proc.stmt, insts)
+
+    val name = Name(proc.name, StringType)
+    val procedureConstants = proc.constants.map { const => Constant(const.name, StringType) }
+    val addresses = List(name).concat(procedureConstants)
+
+    TacModule(addresses, instructions)
+
+  }
+
 // A geração de código de procedure foi mais difícil do que imaginamos, tivemos algumas dúvidas que não conseguimos resolver pesquisando.
 //  def generateProcedure(proc: Procedure, insts: List[TAC]): (Address, List[TAC]) = {}
-  def generateStatement(stmt: Statement, insts: List[TAC]): List[TAC] = {
+  def generateStatement(stmt: Statement, insts: List[Instruction]): List[Instruction] = {
     stmt match {
       case AssignmentStmt(designator, exp) =>
         val (t, insts1) = generateExpression(exp, insts)
@@ -56,29 +74,14 @@ object TACodeGenerator extends CodeGenerator[List[TAC]] {
           (acc, stm) => generateStatement(stm, acc)
         }
 
-      case ProcedureCallStmt(name, argsExps) =>{
-        val argsTAC = argsExps.map(exp => generateExpression(exp,List()))
-        val TACops = argsTAC.flatMap {
-          case (_, tac: List[TAC]) => tac
+      case ProcedureCallStmt(name, argsExps) =>
+        val pushParams = argsExps.map { argument => {
+          PushParam(new Temporary(StringType), "")
         }
-        val param = argsTAC.map(_._1).map{
-          case t: Temporary => (List[TAC](),Param(t,""))
-          case name1: Name => {
-            val t = new Temporary(name1.t)
-            (List(MoveOp(name1, t, "")), Param(t,""))
-          }
-          case const: Constant => {
-            val t = new Temporary(const.t)
-            (List(MoveOp(const, t, "")), Param(t, ""))
-          }
         }
-
-        val paramops = param.map(_._1)
-        val paramops2 = paramops.flatten
-        val param2 = param.map(_._2)
-
-        insts++TACops++paramops2++param2:+Call(name, argsExps.length, "")
-      }
+        val functionCall = Call(name)
+        val popParam = PopParam(4, "")
+        pushParams :+ functionCall :+ popParam
 
       case IfElseStmt(condition, thenStmt, elseStmt) =>
         val l1 = LabelGenerator.generateLabel
@@ -212,7 +215,7 @@ object TACodeGenerator extends CodeGenerator[List[TAC]] {
     }
   }
 
-  def generateExpression(expr: Expression, insts: List[TAC]): (Address, List[TAC]) = {
+  def generateExpression(expr: Expression, insts: List[Instruction]): (Address, List[Instruction]) = {
     expr match {
 
       case Brackets(exp) =>
@@ -303,15 +306,18 @@ object TACodeGenerator extends CodeGenerator[List[TAC]] {
         val (t0, t1) = (temps(0), temps(1))
         return (t1, insts2 :+ SLTOp(r, l, t0, "") :+ NotOp(t0, t1, ""))
 
-// No final não conseguimos implementar a geração de procedures.
-//      case FunctionCallExpression(name, args) =>
-//        val (args, argInsts) = argsExps.foldLeft((List[Address](),insts)) {
-//          (acc, expr) => 
-//            val (address, ops) = TACodeGenerator.generateExpression(expr, acc._2)
-//            (acc._1 :+ address, ops)
-//        }
-//        val params = args.map(x => Param(x, ""))
-//        return (funcs.get(name), argInsts ++ params :+ Call(name, args.length), "")
+      //TODO Dois casos:
+      // 1 - Void
+      // 2 - Retorno != void
+      case FunctionCallExpression(name, args) =>
+        val pushParams = args.map { argument => {
+          PushParam(new Temporary(StringType), "")
+        }
+        }
+        val temporary = new Temporary(StringType)
+        val copyOp = CopyProcReturnOp(Call(name), temporary, "")
+        val popParam = PopParam(4, "")
+        (temporary, insts.concat(pushParams :+ copyOp :+ popParam))
 
       case ArraySubscript(array, index) =>
         val (a, insts1) = generateExpression(array, insts)
@@ -329,14 +335,14 @@ object TACodeGenerator extends CodeGenerator[List[TAC]] {
     }
   }
 
-  private def generateBinaryExpression(left: Expression, right: Expression, insts: List[TAC], exprType: Type): (Address, Address, Address, List[TAC]) = {
+  private def generateBinaryExpression(left: Expression, right: Expression, insts: List[Instruction], exprType: Type): (Address, Address, Address, List[Instruction]) = {
     val (l, insts1) = generateExpression(left, insts)
     val (r, insts2) = generateExpression(right, insts1)
     val t = new Temporary(exprType)
     (t, l, r, insts2)
   }
 
-  private def generateComparisonExpression(expr: Expression, left: Expression, right: Expression, insts: List[TAC]): (List[Address], Address, Address, List[TAC]) = {
+  private def generateComparisonExpression(expr: Expression, left: Expression, right: Expression, insts: List[Instruction]): (List[Address], Address, Address, List[Instruction]) = {
     val (l, insts1) = generateExpression(left, insts)
     val (r, insts2) = generateExpression(right, insts1)
     val temps = expr match {
@@ -346,7 +352,7 @@ object TACodeGenerator extends CodeGenerator[List[TAC]] {
     (temps, l, r, insts2)
   }
 
-  private def generateIfStatement(l1: String, l2: String, condition: TAC, thenStmt: Statement, elseStmt: Option[Statement], insts: List[TAC]): List[TAC] = {
+  private def generateIfStatement(l1: String, l2: String, condition: Instruction, thenStmt: Statement, elseStmt: Option[Statement], insts: List[Instruction]): List[Instruction] = {
     val ops = if (elseStmt.isDefined) List(Jump(l2, ""), NOp(l1)) else List(NOp(l1))
     val insts1 = generateStatement(thenStmt, insts :+ condition) ++ ops
     elseStmt match {

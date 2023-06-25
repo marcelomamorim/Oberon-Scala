@@ -2,6 +2,7 @@ package br.unb.cic.oberon.codegen
 
 import br.unb.cic.oberon.ir.ast.{Constant => ASTConstant, _}
 import br.unb.cic.oberon.ir.tac._
+import br.unb.cic.oberon.parser.ScalaParser
 import org.scalatest.funsuite.AnyFunSuite
 
 class TACodeTest extends AnyFunSuite {
@@ -311,7 +312,7 @@ class TACodeTest extends AnyFunSuite {
     val t0 = new Temporary(IntegerType, 0, true)
     val ops = List(
       AddOp(Constant("1", IntegerType), Constant("2", IntegerType), t0, ""),
-      CopyOp(t0, Name("var", IntegerType), "")
+      MoveOp(t0, Name("var", IntegerType), "")
     )    
     // var = 1+2
     assert(list == ops)
@@ -374,7 +375,7 @@ class TACodeTest extends AnyFunSuite {
     val ops = List(
       NeqJump(Constant("0", IntegerType), Constant("0", IntegerType), l1, ""),
       AddOp(Constant("1", IntegerType), Constant("2", IntegerType), t0, ""),
-      CopyOp(t0, Name("var", IntegerType), ""),
+      MoveOp(t0, Name("var", IntegerType), ""),
       NOp(l1)
       )
     // if(1==1){var = 1 + 2}
@@ -403,11 +404,11 @@ class TACodeTest extends AnyFunSuite {
       OrOp(Constant("true", BooleanType), Constant("false", BooleanType), t0, ""),
       JumpFalse(t0, l1, ""),
       AddOp(Constant("1", IntegerType), Constant("2", IntegerType), t1, ""),
-      CopyOp(t1, Name("var", IntegerType), ""),
+      MoveOp(t1, Name("var", IntegerType), ""),
       Jump(l2, ""),
       NOp(l1),
       SubOp(Constant("3", IntegerType), Constant("2", IntegerType), t2, ""),
-      CopyOp(t2, Name("var", IntegerType), ""),
+      MoveOp(t2, Name("var", IntegerType), ""),
       NOp(l2)
     )
     // if(1|0){var = 1 + 2} else {var = 3 - 2}
@@ -431,7 +432,7 @@ class TACodeTest extends AnyFunSuite {
     val ops = List(
       JumpTrue(Constant("false", BooleanType), l1, ""),
       AddOp(Constant("1", IntegerType), Constant("2", IntegerType), t0, ""),
-      CopyOp(t0, Name("var", IntegerType), ""),
+      MoveOp(t0, Name("var", IntegerType), ""),
       NOp(l1),
       )
     // if(!(false)){var = 1 + 2}
@@ -457,11 +458,20 @@ class TACodeTest extends AnyFunSuite {
       Jump(l1, ""),
       NOp(l2),
       AddOp(Name("var", IntegerType), Constant("1", IntegerType), t0, ""),
-      CopyOp(t0, Name("var", IntegerType), ""),  
+      MoveOp(t0, Name("var", IntegerType), ""),
       NOp(l1),
       LTEJump(Name("var", IntegerType), Constant("5", IntegerType), l2, ""),  
     )
     // while(var < 5){var = var + 1}
     assert(list == ops)
   }
+
+  test("testing procedure call stmt") {
+
+    val module = ScalaParser.parseResource("procedures/procedure01.oberon")
+    val tacProcedureCall = TACodeGenerator.generateStatement(module.stmt.getOrElse(ExitStmt()), List())
+    print(tacProcedureCall)
+
+  }
+
 }

@@ -1,17 +1,17 @@
 package br.unb.cic.oberon.printer
 
-import br.unb.cic.oberon.ir.tac.{AddOp, Address, AndOp, Constant, DivOp, MulOp, Name, NotOp, OrOp, SubOp, TAC, Temporary}
+import br.unb.cic.oberon.ir.tac.{AddOp, Address, AndOp, Constant, DivOp, MulOp, Name, NotOp, OrOp, SubOp, Instruction, Temporary}
 
 object TACodePrinter {
 
-  def printInstructionSequence(instructions : List[TAC]) : Unit = {
+  def printInstructionSequence(instructions : List[Instruction]) : Unit = {
     instructions.foreach(instruction => printInstruction(instruction))
   }
   /**
    *
    *
    */
-  private def printInstruction(instruction : TAC): Unit  = {
+  private def printInstruction(instruction : Instruction): Unit  = {
     instruction match {
       case AddOp(s1, s2, dest, label) => println(s"${handleAddress(dest)} = ${handleAddress(s1)} + ${handleAddress(s2)}")
       case SubOp(s1, s2, dest, label) => println(s"${handleAddress(dest)} = ${handleAddress(s1)} - ${handleAddress(s2)}")
