@@ -424,7 +424,7 @@ class TACodeTest extends AnyFunSuite {
     
     val ifElseStmt = IfElseStmt(condition, thenStmt, elseStmt)
     val list = TACodeGenerator.generateStatement(ifElseStmt, List())
-    TACodeGenerator.reset
+    TACodeGenerator.reset()
 
     val t0 = new Temporary(IntegerType, 0, true)
     val l1 = LabelGenerator.generateLabel
@@ -440,6 +440,7 @@ class TACodeTest extends AnyFunSuite {
   }
 
   test("Testing procedure sum(var1,var2)"){
+    TACodeGenerator.reset()
     Temporary.reset()
     val list_var = List(VariableDeclaration("var1", IntegerType), VariableDeclaration("var2", IntegerType))
     TACodeGenerator.load_vars(list_var)
@@ -480,8 +481,24 @@ class TACodeTest extends AnyFunSuite {
     assert(ops == list)
   }
 
+  test("testing RecordAssignment"){
+    TACodeGenerator.reset()
+    val userTypeName = "date"
+    val typeVariables = List(VariableDeclaration("day",IntegerType), VariableDeclaration("month",IntegerType))
+    val list_userTypes = List(UserDefinedType(userTypeName, RecordType(typeVariables)))
+    val list_var = List(VariableDeclaration("d1", ReferenceToUserDefinedType("date")))
+
+    TACodeGenerator.load_userTypes_and_vars(userTypes = list_userTypes, vars = list_var)
+
+    val recordAssignment = AssignmentStmt(RecordAssignment(VarExpression("d1"),"day"),IntValue(5))
+
+    val list= TACodeGenerator.generateStatement(recordAssignment, List())
+
+
+  }
+
   test("Testing WhileStmt-LTExpression"){
-    TACodeGenerator.reset
+    TACodeGenerator.reset()
     val list_var = List(VariableDeclaration("var", IntegerType))
     TACodeGenerator.load_vars(list_var)
     
