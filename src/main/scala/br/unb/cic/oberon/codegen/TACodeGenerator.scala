@@ -27,8 +27,25 @@ object TACodeGenerator extends CodeGenerator[List[TAC]] {
 
   }
 
-// A geração de código de procedure foi mais difícil do que imaginamos, tivemos algumas dúvidas que não conseguimos resolver pesquisando.
-//  def generateProcedure(proc: Procedure, insts: List[TAC]): (Address, List[TAC]) = {}
+  /**
+   * name: String, (ok)
+   * args: List[FormalArg] ()
+   * constants: List[Constant] (ok)
+   * variables: List[VariableDeclaration] (ok)
+   * stmt: Statement (ok)
+   */
+  def generateProcedure(proc: Procedure, insts: List[TAC]): (List[Address], List[TAC]) = {
+
+    val constantList = List(Name(proc.name))
+
+    val statements = generateStatement(proc.stmt, insts)
+    proc.constants.foreach(constant => constantList :+ Constant(constant.name))
+    proc.variables.foreach(variable => constantList :+ Constant(variable.name))
+
+    (constantList, statements)
+
+  }
+
   def generateStatement(stmt: Statement, insts: List[TAC]): List[TAC] = {
     stmt match {
       case AssignmentStmt(designator, exp) =>
@@ -36,7 +53,7 @@ object TACodeGenerator extends CodeGenerator[List[TAC]] {
         designator match {
           case VarAssignment(varName) =>
             val v = Name(varName, exp.accept(expVisitor).get)
-            return insts1 :+ CopyOp(t, v, "") 
+            return insts1 :+ MoveOp(t, v, "")
 
           case ArrayAssignment(array, index) =>
             val (a, insts2) = generateExpression(array, insts1)
@@ -56,15 +73,8 @@ object TACodeGenerator extends CodeGenerator[List[TAC]] {
           (acc, stm) => generateStatement(stm, acc)
         }
 
-// No final não conseguimos implementar a geração de procedures
-//      case ProcedureCallStmt(name, argsExps) =>
-//        val (args, argInsts) = argsExps.foldLeft((List[Address](),insts)) {
-//          (acc, expr) => 
-//            val (address, ops) = TACodeGenerator.generateExpression(expr, acc._2)
-//            (acc._1 :+ address, ops)
-//        }
-//        val params = args.map(x => Param(x, ""))
-//        return argInsts ++ params :+ Call(name, args.length, "")
+      // TODO: Implementar
+      // case ProcedureCallStmt(name, argsExps) =>
 
       case IfElseStmt(condition, thenStmt, elseStmt) =>
         val l1 = LabelGenerator.generateLabel
@@ -190,7 +200,7 @@ object TACodeGenerator extends CodeGenerator[List[TAC]] {
       case ElseIfStmt(_,_) =>
         throw new Exception("ElseIfStmt não foi implementado")
 
-      case NewStmt(_) =>
+      case NewStmt(varName) =>
         throw new Exception("NewStmt não foi implementado")
 
       case MetaStmt(_) =>
@@ -289,15 +299,12 @@ object TACodeGenerator extends CodeGenerator[List[TAC]] {
         val (t0, t1) = (temps(0), temps(1))
         return (t1, insts2 :+ SLTOp(r, l, t0, "") :+ NotOp(t0, t1, ""))
 
-// No final não conseguimos implementar a geração de procedures.
-//      case FunctionCallExpression(name, args) =>
-//        val (args, argInsts) = argsExps.foldLeft((List[Address](),insts)) {
-//          (acc, expr) => 
-//            val (address, ops) = TACodeGenerator.generateExpression(expr, acc._2)
-//            (acc._1 :+ address, ops)
-//        }
-//        val params = args.map(x => Param(x, ""))
-//        return (funcs.get(name), argInsts ++ params :+ Call(name, args.length), "")
+      case FunctionCallExpression(name, args) => {
+        val instructions = List(LCall(name, ""))
+        val functionName = Name(name)
+        instructions :+ args.foreach(argument => { PushParam(Constant(name), "")} )
+        (functionName, instructions)
+      }
 
       case ArraySubscript(array, index) =>
         val (a, insts1) = generateExpression(array, insts)

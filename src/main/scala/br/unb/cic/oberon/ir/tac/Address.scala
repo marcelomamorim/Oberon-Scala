@@ -1,17 +1,20 @@
 package br.unb.cic.oberon.ir.tac
 
-import br.unb.cic.oberon.ir.ast.{Type}
+import br.unb.cic.oberon.ir.ast.{ StringType, Type }
 
-class Address(t: Type){}
+class Address(t: Type = StringType) {}
 
-case class Name(id: String, t:Type) extends Address(t){}
+case class Name(id: String, t:Type = StringType) extends Address(t) {}
 
-case class Constant(value: String, t: Type) extends Address(t){}
+case class Constant(value: String, t: Type = StringType) extends Address(t){}
 
-case class Temporary(t: Type, num: Int = 0, manual: Boolean = false) extends Address(t){
-  //num e manual somente para testes
+case class Temporary(t: Type = StringType, num: Int = 0, manual: Boolean = false) extends Address(t) {
+
+  /**
+   * num e manual somente para testes
+   */
   import Temporary._
-  var number = num
+  var number: Int = num
   if (!manual) {
     number = Temporary.counter
     Temporary.counter += 1
@@ -33,6 +36,5 @@ case class Temporary(t: Type, num: Int = 0, manual: Boolean = false) extends Add
 
 object Temporary {
   var counter = 0
-
-  def reset(): Unit = {counter = 0}//somente para testes
+  def reset(): Unit = {counter = 0}
 }

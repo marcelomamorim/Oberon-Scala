@@ -36,7 +36,7 @@ case class NegOp(s1: Address, dest: Address, label: String) extends UniOp(s1, de
 
 case class NotOp(s1: Address, dest: Address, label: String) extends UniOp(s1, dest, label) {}
 
-case class CopyOp(s1: Address, dest: Address, label: String) extends TAC(label) {}
+case class MoveOp(s1: Address, dest: Address, label: String) extends TAC(label) {}
 
 case class NOp(label: String) extends TAC(label) {}
 
@@ -67,9 +67,9 @@ case class NeqJump(s1: Address, s2: Address, destLabel: String, label: String) e
 
 
 
-case class Param(s1: Address, label: String) extends TAC(label) {}
+case class PushParam(s1: Address, label: String) extends TAC(label) {}
 
-case class Call(procLabel: String, n: Int, label: String) extends TAC(label) {}
+case class LCall(procLabel: String, label: String) extends TAC(label) {}
 
 case class Return(s1: Address, label: String) extends TAC(label) {}
 
