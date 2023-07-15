@@ -23,6 +23,7 @@ class CoreTransformerTest extends AbstractTestSuite {
     val coreModule = coreVisitor.transformModule(module)
 
     assert(coreModule.name == "LoopStmt")
+    print(coreModule)
     assert (coreModule.stmt.isDefined)
     // assert that the main block contains a sequence of statements
     module.stmt.get match {
@@ -1061,8 +1062,8 @@ class CoreTransformerTest extends AbstractTestSuite {
     assert(isCore2)
   }
 
-  test("Testing if Core for valid Core for loop_stmt01") {
-    val path = Paths.get(getClass.getClassLoader.getResource("stmts/loop_stmt01.oberon").toURI)
+  test("Testing if Core for valid Core for record assignment") {
+    val path = Paths.get(getClass.getClassLoader.getResource("stmts/recordAssignmentStmt01.oberon").toURI)
 
     assert(path != null)
 
@@ -1074,8 +1075,23 @@ class CoreTransformerTest extends AbstractTestSuite {
 
     val coreModule = coreVisitor.transformModule(module)
     val isCore2 = CoreChecker.isModuleCore(coreModule)
+    print(coreModule)
+    assert(isCore2)
+  }
+  test("Testing if Core for valid Core for pointers") {
+    val path = Paths.get(getClass.getClassLoader.getResource("Pointers/pointerNewStatement.oberon").toURI)
 
-    assert(!isCore)
+    assert(path != null)
+
+    val coreVisitor = new CoreVisitor()
+    val content = String.join("\n", Files.readAllLines(path))
+
+    val module = ScalaParser.parse(content)
+    val isCore = CoreChecker.isModuleCore(module)
+
+    val coreModule = coreVisitor.transformModule(module)
+    val isCore2 = CoreChecker.isModuleCore(coreModule)
+    print(coreModule)
     assert(isCore2)
   }
 

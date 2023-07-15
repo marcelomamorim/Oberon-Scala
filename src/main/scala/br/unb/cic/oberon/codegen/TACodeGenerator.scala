@@ -28,17 +28,18 @@ object TACodeGenerator extends CodeGenerator[List[TAC]] {
 
           case ArrayAssignment(array, index) =>
             val (a, insts2) = generateExpression(array, insts1)
-            val (i, insts3) = generateExpression(index, insts2)
-            insts3 :+ ListSet(t, i, a, "")
+            val offset = getArrayOffset(a,index)
+            insts2 :+ ArraySet(t, offset, a, "")
 
           case PointerAssignment(pointerName) =>
             val p = Name(pointerName, LocationType)
             insts1 :+ SetPointer(t, p, "")
 
           case RecordAssignment(record, field) =>
-            val (t0, insts1) = generateExpression(FieldAccessExpression(record, field), insts)
-            //t0 deve conter o endereco do field q queremos mudar, ent ele pode ser usado
-            insts1 :+ MoveOp(t, t0, "")
+            val (offset, insts2) = generateExpression(FieldAccessExpression(record, field), insts1)
+            val (record1, insts3) = generateExpression(record, insts2)
+
+            insts3 :+ RecordSet(t, offset, record1, "")
 
         }
 
@@ -196,7 +197,7 @@ object TACodeGenerator extends CodeGenerator[List[TAC]] {
         throw new Exception("ForEachStmt não foi implementado")
 
       case ElseIfStmt(_, _) =>
-        throw new Exception("ElseIfStmt não foi implementado")
+        throw new Exception("ElseIfStmt não foi implementado") // elseif nao existe no core
 
       case NewStmt(_) =>
         throw new Exception("NewStmt não foi implementado")
@@ -299,36 +300,44 @@ object TACodeGenerator extends CodeGenerator[List[TAC]] {
 
 
       case ArraySubscript(array, index) =>
-        val (a, insts1) = generateExpression(array, insts)
-        val (i, insts2) = generateExpression(index, insts1)
+        val (a:Name , insts1) = generateExpression(array, insts)
+        val offset = getArrayOffset(a,index)
         val t = new Temporary(expr.accept(expVisitor).get)
-        return (t, insts2 :+ ListGet(a, i, t, ""))
+        return (t, insts1 :+ ArrayGet(a, offset, t, ""))
 
       case PointerAccessExpression(name) =>
         val p = Name(name, LocationType)
         val t = new Temporary(expr.accept(expVisitor).get)
         return (t, insts :+ GetValue(p, t, ""))
 
-      case FieldAccessExpression(exp, field) =>
-        val (name: Name, insts1: List[TAC]) =  generateExpression(exp, insts)
-        print(name)
-        // name -> Name(nome_do_tipo,RecordType(List(VariableDeclaration(nome,tipo), VariableDeclaration(nome,tipo),...))),List()
-        val variables : List[VariableDeclaration] = name.t.asInstanceOf[RecordType].variables
-        val targetIndex: Int = variables.indexWhere(_.name == field)
-        val variables2 : List[VariableDeclaration] = variables.take(targetIndex+1)
+       case FieldAccessExpression(record, field) =>
 
-        val offset: Int = variables2.map{
-          case VariableDeclaration(_, ArrayType(size,_)) => size*4
-          case VariableDeclaration(_, _) => 4
-        }.sum
-        val t0 = new Temporary(LocationType)
-        // criar ponteiro t0 para name + offset ???
-        // valor do field em *(t0)
-        // return (t0, insts :+ ops para fazer esse calculo
+    val (name: Name, insts1: List[TAC] ) = generateExpression (record, insts)
+      // name -> Name(nome_do_tipo,RecordType(List(VariableDeclaration(nome,tipo), VariableDeclaration(nome,tipo),...))),List()
+    val variables: List[VariableDeclaration] = name.t.asInstanceOf[RecordType].variables
+    val targetIndex: Int = variables.indexWhere (_.name == field)
+    val variables2: List[VariableDeclaration] = variables.take (targetIndex + 1)
 
-        return (t0, insts1)
+    val offset: Int = variables2.map {
+    case VariableDeclaration (_, ArrayType (size, _) ) => size * 4
+    case VariableDeclaration (_, _) => 4
+    }.sum
+     generateExpression(IntValue(offset), insts1)
+
+
+
+
+
+
+
+      // criar ponteiro t0 para name + offset ???
+      // valor do field em *(t0)
+      // return (t0, insts :+ ops para fazer esse calculo
+
+
     }
   }
+
 
 
 
@@ -359,7 +368,27 @@ object TACodeGenerator extends CodeGenerator[List[TAC]] {
 
       case None => insts1
     }
-  } 
+  }
+
+  private def getArrayOffset(array: Address, index: Expression) : Address ={
+    val arrayType = array match {
+      case Name(_, ArrayType(_, baseType)) => baseType
+    }
+    val index1 = index match{
+      case IntValue(value) => value
+    }
+
+    val offset = arrayType match {
+      case IntegerType => 4*index1
+      //faltariam os outros tipos, mas como na teoria vai ter uma tabela ele so pegaria da tabela
+      // ele so pegaria da tabela e multiplicaria pelo indice
+    }
+
+
+
+  Constant(offset.toString, IntegerType)
+
+  }
 
 
   def load_vars(vars: List[VariableDeclaration], consts: List[ASTConstant] = List()): Unit = {
@@ -368,6 +397,10 @@ object TACodeGenerator extends CodeGenerator[List[TAC]] {
 
   def load_userTypes_and_vars(userTypes: List[UserDefinedType], vars: List[VariableDeclaration], consts: List[ASTConstant] = List()): Unit = {
     OberonModule("test", Set(), userTypes, consts, vars, List(), None).accept(tc)
+  }
+
+  def load_new_var(variable: VariableDeclaration): Unit = {
+
   }
 
   //somente para testes

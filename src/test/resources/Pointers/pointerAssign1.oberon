@@ -12,7 +12,8 @@ BEGIN
     b^ := 9.5;
     c^ := 'c';
     d^ := True;
-    e^ := "Hello."
+    e^ := "Hello.";
+    a := a + 4
 END
 
 END pointerAssign.

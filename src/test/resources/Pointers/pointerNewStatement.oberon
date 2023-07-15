@@ -7,6 +7,10 @@ VAR
 
 BEGIN
   NEW(p);
+  NEW(va);
+  va := 1;
+  va := 'a';
+  q :=10;
   p^ := 10;
   x := 100;
   y := 1000
