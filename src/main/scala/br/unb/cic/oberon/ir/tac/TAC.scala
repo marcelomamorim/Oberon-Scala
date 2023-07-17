@@ -33,7 +33,7 @@ case class MoveOp(s1: Address, dest: Address, label: String) extends TAC(label) 
 
 case class NOp(label: String) extends TAC(label) {}
 
-case class GetAddress(s1: Address, s2: Address, label:String) extends TAC(label) {}
+
 
 
 case class Jump(destLabel: String, label: String) extends TAC(label) {}

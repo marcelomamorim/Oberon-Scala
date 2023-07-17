@@ -5,7 +5,11 @@ import br.unb.cic.oberon.ir.tac._
 import br.unb.cic.oberon.tc.{ExpressionTypeVisitor, TypeChecker}
 
 object TACodeGenerator extends CodeGenerator[List[TAC]] {
-  
+  // so uma ideia do mapeamento de bytes, precisaria saber o tamanho exato de cada tipo
+  private var typeByteSize: Map[Type,Int] =
+    Map(IntegerType -> 4,
+      RealType -> 4
+       )
   private var tc = new TypeChecker()
   private var expVisitor = new ExpressionTypeVisitor(tc)
 
@@ -36,10 +40,9 @@ object TACodeGenerator extends CodeGenerator[List[TAC]] {
             insts1 :+ SetPointer(t, p, "")
 
           case RecordAssignment(record, field) =>
-            val (offset, insts2) = generateExpression(FieldAccessExpression(record, field), insts1)
-            val (record1, insts3) = generateExpression(record, insts2)
-
-            insts3 :+ RecordSet(t, offset, record1, "")
+            val (name: Name, insts2: List[TAC]) = generateExpression(record, insts1)
+            val offset = getRecordOffset(name, field)
+            insts2 :+ RecordSet(t, offset, name, "")
 
         }
 
@@ -193,12 +196,6 @@ object TACodeGenerator extends CodeGenerator[List[TAC]] {
       case ExitStmt() =>
         return insts :+ Exit("")
 
-      case ForEachStmt(_, _, _) =>
-        throw new Exception("ForEachStmt não foi implementado")
-
-      case ElseIfStmt(_, _) =>
-        throw new Exception("ElseIfStmt não foi implementado") // elseif nao existe no core
-
       case NewStmt(_) =>
         throw new Exception("NewStmt não foi implementado")
 
@@ -311,18 +308,18 @@ object TACodeGenerator extends CodeGenerator[List[TAC]] {
         return (t, insts :+ GetValue(p, t, ""))
 
        case FieldAccessExpression(record, field) =>
+         val (name: Name, insts1: List[TAC]) = generateExpression(record, insts)
+         val offset = getRecordOffset(name, field)
+         val fieldtype = getFieldType(name, field)
+         val t = new Temporary(fieldtype)
+         (t, insts1 :+ RecordGet(name, offset, t, ""))
 
-    val (name: Name, insts1: List[TAC] ) = generateExpression (record, insts)
-      // name -> Name(nome_do_tipo,RecordType(List(VariableDeclaration(nome,tipo), VariableDeclaration(nome,tipo),...))),List()
-    val variables: List[VariableDeclaration] = name.t.asInstanceOf[RecordType].variables
-    val targetIndex: Int = variables.indexWhere (_.name == field)
-    val variables2: List[VariableDeclaration] = variables.take (targetIndex + 1)
 
-    val offset: Int = variables2.map {
-    case VariableDeclaration (_, ArrayType (size, _) ) => size * 4
-    case VariableDeclaration (_, _) => 4
-    }.sum
-     generateExpression(IntValue(offset), insts1)
+
+
+
+
+
 
 
 
@@ -374,22 +371,30 @@ object TACodeGenerator extends CodeGenerator[List[TAC]] {
     val arrayType = array match {
       case Name(_, ArrayType(_, baseType)) => baseType
     }
-    val index1 = index match{
-      case IntValue(value) => value
-    }
+    val index1 = index match{ case IntValue(value) => value }
 
-    val offset = arrayType match {
-      case IntegerType => 4*index1
-      //faltariam os outros tipos, mas como na teoria vai ter uma tabela ele so pegaria da tabela
-      // ele so pegaria da tabela e multiplicaria pelo indice
-    }
+    val offset = typeByteSize.getOrElse(arrayType,0) * index1
 
 
 
   Constant(offset.toString, IntegerType)
 
   }
+  private def getRecordOffset(record: Name, field: String) : Constant = {
+    val variables: List[VariableDeclaration] = record.t.asInstanceOf[RecordType].variables
+    val targetIndex: Int = variables.indexWhere(_.name == field)
+    val variables2: List[VariableDeclaration] = variables.take(targetIndex + 1)
 
+    val offset: Int = variables2.map {
+      case VariableDeclaration(_, ArrayType(size, _)) => size * 4
+      case VariableDeclaration(_, vartype) => typeByteSize.getOrElse(vartype,0)
+    }.sum
+
+    Constant(offset.toString, IntegerType)
+  }
+  private def getFieldType(record: Name, field: String) : Type = {
+    IntegerType
+  }
 
   def load_vars(vars: List[VariableDeclaration], consts: List[ASTConstant] = List()): Unit = {
     OberonModule("test", Set(), List(), consts, vars, List(), None).accept(tc)
@@ -399,9 +404,7 @@ object TACodeGenerator extends CodeGenerator[List[TAC]] {
     OberonModule("test", Set(), userTypes, consts, vars, List(), None).accept(tc)
   }
 
-  def load_new_var(variable: VariableDeclaration): Unit = {
 
-  }
 
   //somente para testes
   def reset(): Unit = {

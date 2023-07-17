@@ -457,7 +457,7 @@ class TACodeTest extends AnyFunSuite {
       MoveOp(Name("var2", IntegerType), t1, ""),
       Param(t0,""),
       Param(t1,""),
-      Call("add", 2, "")
+      Call("sum", 2, "")
     )
     assert(list == ops)
   }
@@ -565,6 +565,28 @@ class TACodeTest extends AnyFunSuite {
 
   }
 
+  test("testing Record Usage") {
+    TACodeGenerator.reset()
+    val userTypeName = "date"
+    val typeVariables = List(VariableDeclaration("day", IntegerType), VariableDeclaration("lista", ArrayType(4, IntegerType)), VariableDeclaration("month", IntegerType))
+    val list_userTypes = List(UserDefinedType(userTypeName, RecordType(typeVariables)))
+    val list_var = List(VariableDeclaration("d1", ReferenceToUserDefinedType("date")))
+
+    TACodeGenerator.load_userTypes_and_vars(userTypes = list_userTypes, vars = list_var)
+
+    val recordUsage = FieldAccessExpression(VarExpression("d1"),"day")
+
+    val (t,list) = TACodeGenerator.generateExpression(recordUsage, List())
+    Temporary.reset()
+    val t0 = new Temporary(IntegerType, 0, true)
+
+    val ops = List(RecordGet(Name("d1", RecordType(List(VariableDeclaration("day", IntegerType), VariableDeclaration("lista", ArrayType(4, IntegerType)), VariableDeclaration("month", IntegerType)))),
+      Constant("4", IntegerType), t0,""))
+
+    assert(list == ops)
+
+
+  }
 
 
   test("Testing WhileStmt-LTExpression"){

@@ -1078,6 +1078,23 @@ class CoreTransformerTest extends AbstractTestSuite {
     print(coreModule)
     assert(isCore2)
   }
+
+  test("Testing if Core for valid Core for record usage") {
+    val path = Paths.get(getClass.getClassLoader.getResource("stmts/recordUsage.oberon").toURI)
+
+    assert(path != null)
+
+    val coreVisitor = new CoreVisitor()
+    val content = String.join("\n", Files.readAllLines(path))
+
+    val module = ScalaParser.parse(content)
+    val isCore = CoreChecker.isModuleCore(module)
+
+    val coreModule = coreVisitor.transformModule(module)
+    val isCore2 = CoreChecker.isModuleCore(coreModule)
+    print(coreModule)
+    assert(isCore2)
+  }
   test("Testing if Core for valid Core for pointers") {
     val path = Paths.get(getClass.getClassLoader.getResource("Pointers/pointerNewStatement.oberon").toURI)
 
