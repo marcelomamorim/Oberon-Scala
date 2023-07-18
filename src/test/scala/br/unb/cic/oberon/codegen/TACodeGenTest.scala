@@ -588,6 +588,26 @@ class TACodeTest extends AnyFunSuite {
 
   }
 
+  test("testing New statement") {
+    TACodeGenerator.reset()
+    val list_var = List( VariableDeclaration("p",PointerType(IntegerType)))
+
+    TACodeGenerator.load_vars(list_var)
+
+    val newstmt = NewStmt("p")
+
+    val list = TACodeGenerator.generateStatement(newstmt, List())
+    Temporary.reset()
+
+
+    val ops = List(New(Name("p",PointerType(IntegerType)),""))
+
+    assert(list == ops)
+
+
+  }
+
+
 
   test("Testing WhileStmt-LTExpression"){
     TACodeGenerator.reset()
