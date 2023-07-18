@@ -68,6 +68,8 @@ case class Call(procLabel: String, n: Int, label: String) extends TAC(label) {}
 
 case class Return(s1: Address, label: String) extends TAC(label) {}
 
+case class New(s1: Address, label: String) extends  TAC(label) {}
+
 
 
 case class ArrayGet(list: Address, offset: Address, dest: Address, label: String) extends TAC(label) {}

@@ -171,33 +171,34 @@ object TACodeGenerator extends CodeGenerator[List[TAC]] {
         insts :+ ReadLongReal(Name(varName, RealType), "")
 
       case ReadRealStmt(varName) =>
-        return insts :+ ReadReal(Name(varName, RealType), "")
+         insts :+ ReadReal(Name(varName, RealType), "")
 
       case ReadLongIntStmt(varName) =>
-        return insts :+ ReadLongInt(Name(varName, IntegerType), "")
+         insts :+ ReadLongInt(Name(varName, IntegerType), "")
 
       case ReadIntStmt(varName) =>
-        return insts :+ ReadInt(Name(varName, IntegerType), "")
+         insts :+ ReadInt(Name(varName, IntegerType), "")
 
       case ReadShortIntStmt(varName) =>
-        return insts :+ ReadShortInt(Name(varName, IntegerType), "")
+         insts :+ ReadShortInt(Name(varName, IntegerType), "")
 
       case ReadCharStmt(varName) =>
-        return insts :+ ReadChar(Name(varName, StringType), "")
+         insts :+ ReadChar(Name(varName, StringType), "")
 
       case WriteStmt(expression) =>
         val (t, insts1) = generateExpression(expression, insts)
-        return insts1 :+ Write(t, "")
+         insts1 :+ Write(t, "")
 
       case ReturnStmt(expr) =>
         val (t, insts1) = generateExpression(expr, insts)
-        return insts1 :+ Return(t, "")
+         insts1 :+ Return(t, "")
 
       case ExitStmt() =>
-        return insts :+ Exit("")
+        insts :+ Exit("")
 
-      case NewStmt(_) =>
-        throw new Exception("NewStmt não foi implementado")
+      case NewStmt(varName) =>
+        val (variable: Address,insts1) = generateExpression(VarExpression(varName),insts)
+        insts1 :+ New(variable,"")
 
       case MetaStmt(_) =>
         throw new Exception("MetaStmt não foi implementado")
@@ -386,14 +387,18 @@ object TACodeGenerator extends CodeGenerator[List[TAC]] {
     val variables2: List[VariableDeclaration] = variables.take(targetIndex + 1)
 
     val offset: Int = variables2.map {
-      case VariableDeclaration(_, ArrayType(size, _)) => size * 4
+      case VariableDeclaration(name, ArrayType(size, vartype)) => size * typeByteSize.getOrElse(vartype,0)
       case VariableDeclaration(_, vartype) => typeByteSize.getOrElse(vartype,0)
     }.sum
 
     Constant(offset.toString, IntegerType)
   }
   private def getFieldType(record: Name, field: String) : Type = {
-    IntegerType
+    val variables: List[VariableDeclaration] = record.t.asInstanceOf[RecordType].variables
+    variables.find(_.name == field).map(_.variableType) match {
+      case Some(ty) => ty
+      case None =>  throw new IllegalArgumentException("All variables need a Type")
+    }
   }
 
   def load_vars(vars: List[VariableDeclaration], consts: List[ASTConstant] = List()): Unit = {
